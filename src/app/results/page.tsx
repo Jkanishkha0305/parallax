@@ -14,6 +14,18 @@ interface PersonaState {
   error: string | null;
 }
 
+interface Suggestion {
+  priority: 'high' | 'medium' | 'low';
+  issue: string;
+  fix: string;
+  impact: string;
+}
+
+interface SuggestionsResponse {
+  suggestions: Suggestion[];
+  summary: string;
+}
+
 export default function ResultsPage() {
   const searchParams = useSearchParams();
   const url = searchParams.get('url') || '';
@@ -24,6 +36,9 @@ export default function ResultsPage() {
   const [personaStates, setPersonaStates] = useState<Record<string, PersonaState>>({});
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [suggestions, setSuggestions] = useState<SuggestionsResponse | null>(null);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -154,11 +169,54 @@ export default function ResultsPage() {
     }
   };
 
+  const generateSuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    try {
+      const journeys = selectedPersonas
+        .map(p => personaStates[p.id]?.journey)
+        .filter(Boolean)
+        .map(j => ({
+          personaName: j!.personaId,
+          painPoints: j!.painPoints,
+          highlights: j!.highlights,
+          overallScore: j!.overallScore,
+        }));
+
+      const response = await fetch('/api/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, journeys }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate suggestions');
+      }
+
+      const data = await response.json();
+      setSuggestions(data);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Error generating suggestions:', error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
   const selectedPersonas = personas.filter(p => personaIds.includes(p.id));
   const scores = Object.values(personaStates)
     .map(s => s.journey?.overallScore || 0)
     .filter(s => s > 0);
   const loadingCount = Object.values(personaStates).filter(s => s.isLoading).length;
+  const isComplete = loadingCount === 0 && scores.length > 0;
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400', icon: '🔴' };
+      case 'medium': return { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', icon: '🟡' };
+      case 'low': return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400', icon: '🟢' };
+      default: return { bg: 'bg-white/5', border: 'border-white/10', text: 'text-white', icon: '⚪' };
+    }
+  };
 
   return (
     <main className={`min-h-screen relative transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
@@ -197,7 +255,7 @@ export default function ResultsPage() {
         </div>
 
         {/* Overall Score */}
-        <div className="mb-12 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <ParallaxScore scores={scores} />
         </div>
 
@@ -236,15 +294,110 @@ export default function ResultsPage() {
           ))}
         </div>
 
-        {/* All Complete */}
-        {loadingCount === 0 && scores.length > 0 && (
+        {/* All Complete - Actions */}
+        {isComplete && (
           <div className="mt-12 text-center animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 text-[#666]">
+            <div className="inline-flex items-center gap-2 text-[#666] mb-6">
               <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               Analysis complete • {selectedPersonas.length} personas analyzed
             </div>
+            
+            {/* Get Suggestions Button */}
+            {!showSuggestions && (
+              <div>
+                <button
+                  onClick={generateSuggestions}
+                  disabled={isLoadingSuggestions}
+                  className="group relative px-8 py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="relative z-10 flex items-center gap-3">
+                    {isLoadingSuggestions ? (
+                      <>
+                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Generating Suggestions...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        Get AI Suggestions to Fix Issues
+                      </>
+                    )}
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {/* Suggestions Panel */}
+            {showSuggestions && suggestions && (
+              <div className="mt-8 text-left max-w-3xl mx-auto">
+                <div className="glass-card p-6 border border-amber-500/20">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white">AI Suggestions</h2>
+                      <p className="text-sm text-[#666]">Actionable fixes based on persona feedback</p>
+                    </div>
+                    <button
+                      onClick={() => setShowSuggestions(false)}
+                      className="ml-auto text-[#666] hover:text-white transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="mb-6 p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                    <p className="text-amber-200">{suggestions.summary}</p>
+                  </div>
+
+                  {/* Suggestions List */}
+                  <div className="space-y-4">
+                    {suggestions.suggestions.map((suggestion, idx) => {
+                      const colors = getPriorityColor(suggestion.priority);
+                      return (
+                        <div 
+                          key={idx}
+                          className={`p-4 rounded-xl ${colors.bg} border ${colors.border}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="text-xl">{colors.icon}</span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className={`text-xs font-medium uppercase ${colors.text}`}>
+                                  {suggestion.priority} priority
+                                </span>
+                              </div>
+                              <h4 className="font-medium text-white mb-2">{suggestion.issue}</h4>
+                              <p className="text-sm text-[#999] mb-2">
+                                <span className="text-purple-400 font-medium">Fix: </span>
+                                {suggestion.fix}
+                              </p>
+                              <p className="text-sm text-[#777]">
+                                <span className="text-green-400 font-medium">Impact: </span>
+                                {suggestion.impact}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

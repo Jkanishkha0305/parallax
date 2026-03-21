@@ -467,7 +467,7 @@ export async function runAgentLoop(
         model: COMPUTER_USE_MODEL,
         contents,
         config: {
-          tools: [{ computerUse: { environment: 'BROWSER' } }],
+          tools: [{ computerUse: { environment: 'ENVIRONMENT_BROWSER' } }],
         },
       });
     } catch (err) {

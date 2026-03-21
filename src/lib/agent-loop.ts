@@ -96,10 +96,16 @@ export async function runAgentLoop(
 
     const screenshot = await takeScreenshot(page);
 
-    const { text: thought } = await generateText({
-      model: google('gemini-2.5-flash'),
-      prompt: `You are ${persona.name}. ${persona.description}. You just did: ${stepDescription} In ONE short sentence (max 12 words), what are you thinking right now? Be in character. Be specific. Use first person. Can include emoji. Examples: "Why do they need my LinkedIn just to sign up? 🤨" "Finally found the pricing page, took way too long 😤" "This loads so fast, I'm impressed! ⚡"`,
-    });
+    let thought = '';
+    try {
+      const { text } = await generateText({
+        model: google('gemini-2.5-flash'),
+        prompt: `You are ${persona.name}. ${persona.description}. You just did: ${stepDescription} In ONE short sentence (max 12 words), what are you thinking right now? Be in character. Be specific. Use first person. Can include emoji. Examples: "Why do they need my LinkedIn just to sign up? 🤨" "Finally found the pricing page, took way too long 😤" "This loads so fast, I'm impressed! ⚡"`,
+      });
+      thought = text;
+    } catch {
+      thought = stepDescription;
+    }
 
     const step: AgentStep = {
       stepNumber: turn + 1,

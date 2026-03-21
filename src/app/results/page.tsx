@@ -108,17 +108,20 @@ function ResultsContent() {
 
   useEffect(() => {
     if (!url || !personaIdsString || personas.length === 0) return;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    personaIds.forEach((personaId, index) => {
-      const persona = personas.find(p => p.id === personaId);
-      if (persona) {
-        const t = setTimeout(() => {
-          runPersonaStream(personaId, url, persona);
-        }, index * 20000); // stagger 20s apart — max 2 browsers at once
-        timers.push(t);
+    
+    // Run sequentially to avoid resource exhaustion
+    const runAll = async () => {
+      for (const personaId of personaIds) {
+        const persona = personas.find(p => p.id === personaId);
+        if (persona) {
+          await runPersonaStream(personaId, url, persona);
+          // Small delay between agents
+          await new Promise(r => setTimeout(r, 1000));
+        }
       }
-    });
-    return () => timers.forEach(clearTimeout);
+    };
+    
+    runAll();
   }, [url, personaIdsString, personas]);
 
   const runPersonaStream = async (personaId: string, targetUrl: string, persona: Persona) => {

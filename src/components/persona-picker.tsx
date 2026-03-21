@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 interface Persona {
   id: string;
   name: string;
@@ -48,12 +46,37 @@ const PERSONAS: Persona[] = [
   },
 ];
 
-const colorClasses: Record<string, string> = {
-  blue: 'border-l-blue-500',
-  pink: 'border-l-pink-500',
-  amber: 'border-l-amber-500',
-  green: 'border-l-green-500',
-  purple: 'border-l-purple-500',
+const colorConfig: Record<string, { border: string; gradient: string; glow: string; shadow: string }> = {
+  blue: { 
+    border: 'border-blue-500/50', 
+    gradient: 'from-blue-500/20 to-blue-600/10', 
+    glow: 'shadow-blue-500/20',
+    shadow: 'hover:shadow-blue-500/30'
+  },
+  pink: { 
+    border: 'border-pink-500/50', 
+    gradient: 'from-pink-500/20 to-pink-600/10', 
+    glow: 'shadow-pink-500/20',
+    shadow: 'hover:shadow-pink-500/30'
+  },
+  amber: { 
+    border: 'border-amber-500/50', 
+    gradient: 'from-amber-500/20 to-amber-600/10', 
+    glow: 'shadow-amber-500/20',
+    shadow: 'hover:shadow-amber-500/30'
+  },
+  green: { 
+    border: 'border-green-500/50', 
+    gradient: 'from-green-500/20 to-green-600/10', 
+    glow: 'shadow-green-500/20',
+    shadow: 'hover:shadow-green-500/30'
+  },
+  purple: { 
+    border: 'border-purple-500/50', 
+    gradient: 'from-purple-500/20 to-purple-600/10', 
+    glow: 'shadow-purple-500/20',
+    shadow: 'hover:shadow-purple-500/30'
+  },
 };
 
 interface PersonaPickerProps {
@@ -63,49 +86,69 @@ interface PersonaPickerProps {
 
 export default function PersonaPicker({ selectedPersonas, onToggle }: PersonaPickerProps) {
   const allSelected = selectedPersonas.length === PERSONAS.length;
-  const toggleAll = () => {
-    if (allSelected) {
-      PERSONAS.forEach(p => onToggle(p.id));
-    } else {
-      PERSONAS.forEach(p => {
-        if (!selectedPersonas.includes(p.id)) onToggle(p.id);
-      });
-    }
-  };
 
   return (
-    <div className="w-full max-w-4xl">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Select AI Personas</h2>
-        <button
-          onClick={toggleAll}
-          className="text-sm text-[#888] hover:text-white transition-colors"
-        >
-          {allSelected ? 'Deselect All' : 'Select All'}
-        </button>
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold text-white">AI Personas</h2>
+          <span className="px-3 py-1 bg-purple-500/20 text-purple-400 text-sm rounded-full">
+            {selectedPersonas.length} selected
+          </span>
+        </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {PERSONAS.map((persona) => {
           const isSelected = selectedPersonas.includes(persona.id);
+          const config = colorConfig[persona.color];
+          
           return (
             <button
               key={persona.id}
               onClick={() => onToggle(persona.id)}
               className={`
-                text-left p-4 rounded-lg bg-[#111] border-l-4 transition-all
-                ${colorClasses[persona.color]}
+                relative p-5 rounded-2xl text-left transition-all duration-300 overflow-hidden
                 ${isSelected 
-                  ? 'ring-1 ring-white/30 bg-[#1a1a1a]' 
-                  : 'border-[#222] hover:border-[#444]'
+                  ? `bg-gradient-to-br ${config.gradient} border ${config.border} ${config.shadow} transform scale-105` 
+                  : 'bg-[#111] border border-[#1e1e1e] hover:border-[#333]'
                 }
               `}
             >
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-2xl">{persona.emoji}</span>
-                <span className="font-semibold">{persona.name}</span>
+              {/* Selection indicator */}
+              <div className={`
+                absolute top-3 right-3 w-6 h-6 rounded-full border-2 transition-all duration-300
+                ${isSelected 
+                  ? `bg-${persona.color}-500 border-${persona.color}-500` 
+                  : 'border-[#444]'
+                }
+              `}>
+                {isSelected && (
+                  <svg className="w-full h-full text-white p-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
               </div>
-              <p className="text-sm text-[#888]">{persona.description}</p>
+              
+              {/* Emoji */}
+              <div className={`text-4xl mb-3 ${isSelected ? 'scale-110' : ''} transition-transform duration-300`}>
+                {persona.emoji}
+              </div>
+              
+              {/* Name */}
+              <h3 className={`font-semibold mb-1 ${isSelected ? 'text-white' : 'text-[#ccc]'}`}>
+                {persona.name}
+              </h3>
+              
+              {/* Description */}
+              <p className="text-sm text-[#666] leading-relaxed">
+                {persona.description}
+              </p>
+              
+              {/* Selected glow effect */}
+              {isSelected && (
+                <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-50 pointer-events-none`} />
+              )}
             </button>
           );
         })}

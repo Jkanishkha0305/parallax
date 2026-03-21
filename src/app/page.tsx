@@ -14,6 +14,12 @@ const ALL_PERSONAS_IDS = [
   'global-gita',
 ];
 
+const DEMO_URLS = [
+  { url: 'https://stripe.com', label: 'Stripe', emoji: '💳' },
+  { url: 'https://linear.app', label: 'Linear', emoji: '📋' },
+  { url: 'https://vercel.com', label: 'Vercel', emoji: '▲' },
+];
+
 export default function Home() {
   const router = useRouter();
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>(ALL_PERSONAS_IDS);
@@ -133,10 +139,29 @@ export default function Home() {
         </div>
 
         {/* URL Input */}
-        <div className="mb-6 w-full max-w-2xl animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+        <div className="mb-4 w-full max-w-2xl animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           <div className="glass-card p-2">
             <UrlInput onSubmit={(u) => setUrl(u)} />
           </div>
+        </div>
+
+        {/* Demo URLs */}
+        <div className="mb-8 flex flex-wrap justify-center gap-3 animate-fade-in-up" style={{ animationDelay: '0.35s' }}>
+          <span className="text-sm text-[#666]">Try:</span>
+          {DEMO_URLS.map((demo) => (
+            <button
+              key={demo.url}
+              onClick={() => setUrl(demo.url)}
+              className={`px-3 py-1.5 rounded-full text-sm transition-all duration-200 ${
+                url === demo.url 
+                  ? 'bg-purple-500/30 text-white border border-purple-500/50' 
+                  : 'bg-white/5 text-[#888] border border-white/10 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <span className="mr-1">{demo.emoji}</span>
+              {demo.label}
+            </button>
+          ))}
         </div>
 
         {/* Target Audience Input */}

@@ -71,6 +71,7 @@ export async function executeFunctionCall(
         return { success: true, description: `Typed "${text}"`, url: page.url() };
       }
       case 'scroll':
+      case 'scroll_at':
       case 'scroll_document': {
         const { direction } = args as { direction: string };
         const delta = direction === 'up' ? -500 : 500;

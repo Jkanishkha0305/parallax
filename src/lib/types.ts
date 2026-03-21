@@ -8,21 +8,15 @@ export interface Persona {
 }
 
 export interface AgentAction {
-  type: 'click' | 'scroll' | 'type' | 'navigate' | 'done';
-  selector?: string;
-  text?: string;
-  url?: string;
-  direction?: 'up' | 'down';
+  name: string;
+  args: Record<string, unknown>;
+  description: string;
 }
 
 export interface AgentStep {
   stepNumber: number;
   screenshot: string;
-  observation: string;
-  emotion: string;
-  reasoning: string;
   action: AgentAction;
-  score: number;
 }
 
 export interface PersonaJourney {

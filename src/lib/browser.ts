@@ -34,59 +34,68 @@ export async function executeFunctionCall(
   page: Page,
   name: string,
   args: Record<string, unknown>
-): Promise<{ success: boolean; description: string }> {
+): Promise<{ success: boolean; description: string; url?: string }> {
   try {
     switch (name) {
-      case 'click_at': {
-        const { px, py } = denormalize(args.x as number, args.y as number);
+      case 'open_web_browser': {
+        return { 
+          success: true, 
+          description: 'Browser is ready',
+          url: page.url()
+        };
+      }
+      case 'click_element': {
+        const { x, y } = args as { x: number; y: number };
+        const { px, py } = denormalize(x, y);
         await page.mouse.click(px, py);
-        await page.waitForTimeout(800);
-        return { success: true, description: `Clicked at (${px}, ${py})` };
+        await page.waitForTimeout(1000);
+        return { success: true, description: `Clicked at (${px}, ${py})`, url: page.url() };
       }
-      case 'double_click_at': {
-        const { px, py } = denormalize(args.x as number, args.y as number);
-        await page.mouse.dblclick(px, py);
-        await page.waitForTimeout(800);
-        return { success: true, description: `Double-clicked at (${px}, ${py})` };
-      }
-      case 'right_click_at': {
-        const { px, py } = denormalize(args.x as number, args.y as number);
-        await page.mouse.click(px, py, { button: 'right' });
+      case 'hover_element': {
+        const { x, y } = args as { x: number; y: number };
+        const { px, py } = denormalize(x, y);
+        await page.mouse.move(px, py);
         await page.waitForTimeout(500);
-        return { success: true, description: `Right-clicked at (${px}, ${py})` };
+        return { success: true, description: `Hovered at (${px}, ${py})`, url: page.url() };
       }
-      case 'type_text_at': {
-        const { px, py } = denormalize(args.x as number, args.y as number);
-        await page.mouse.click(px, py);
-        await page.keyboard.type(args.text as string, { delay: 50 });
+      case 'type_text': {
+        const { text, x, y } = args as { text: string; x?: number; y?: number };
+        if (x !== undefined && y !== undefined) {
+          const { px, py } = denormalize(x, y);
+          await page.mouse.click(px, py);
+        }
+        await page.keyboard.type(text, { delay: 50 });
         await page.waitForTimeout(500);
-        return { success: true, description: `Typed "${args.text}" at (${px}, ${py})` };
+        return { success: true, description: `Typed "${text}"`, url: page.url() };
       }
-      case 'scroll_document': {
-        const direction = args.direction === 'up' ? -500 : 500;
-        await page.mouse.wheel(0, direction);
+      case 'scroll': {
+        const { direction } = args as { direction: string };
+        const delta = direction === 'up' ? -500 : 500;
+        await page.mouse.wheel(0, delta);
         await page.waitForTimeout(500);
-        return { success: true, description: `Scrolled ${args.direction}` };
+        return { success: true, description: `Scrolled ${direction}`, url: page.url() };
       }
-      case 'navigate': {
-        await page.goto(args.url as string, { waitUntil: 'domcontentloaded', timeout: 10000 });
-        await page.waitForTimeout(1500);
-        return { success: true, description: `Navigated to ${args.url}` };
+      case 'navigate_to_url': {
+        const { url } = args as { url: string };
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        await page.waitForTimeout(2000);
+        return { success: true, description: `Navigated to ${url}`, url: page.url() };
       }
-      case 'key_press': {
-        await page.keyboard.press(args.key as string);
+      case 'wait': {
+        await page.waitForTimeout(2000);
+        return { success: true, description: 'Waited 2 seconds', url: page.url() };
+      }
+      case 'press_key': {
+        const { key } = args as { key: string };
+        await page.keyboard.press(key);
         await page.waitForTimeout(500);
-        return { success: true, description: `Pressed key: ${args.key}` };
+        return { success: true, description: `Pressed ${key}`, url: page.url() };
       }
-      case 'drag_and_drop': {
-        const from = denormalize(args.startX as number, args.startY as number);
-        const to = denormalize(args.endX as number, args.endY as number);
-        await page.mouse.move(from.px, from.py);
-        await page.mouse.down();
-        await page.mouse.move(to.px, to.py, { steps: 10 });
-        await page.mouse.up();
-        await page.waitForTimeout(500);
-        return { success: true, description: `Dragged from (${from.px}, ${from.py}) to (${to.px}, ${to.py})` };
+      case 'get_current_url': {
+        return { success: true, description: `Current URL: ${page.url()}`, url: page.url() };
+      }
+      case 'done': {
+        return { success: true, description: 'Task complete' };
       }
       default:
         return { success: false, description: `Unknown action: ${name}` };

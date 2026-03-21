@@ -148,7 +148,7 @@ function ResultsContent() {
                   ...prev,
                   [personaId]: {
                     ...prev[personaId],
-                    steps: [...prev[personaId].steps, data.step],
+                    steps: [...(prev[personaId]?.steps || []), data.step],
                   },
                 }));
               } else if (data.type === 'summary') {
@@ -157,12 +157,12 @@ function ResultsContent() {
                   [personaId]: {
                     ...prev[personaId],
                     journey: {
-                      personaId,
-                      steps: prev[personaId].steps,
+                      personaId: data.personaId,
+                      steps: prev[personaId]?.steps || [],
                       overallScore: data.overallScore,
                       summary: data.summary,
-                      painPoints: data.painPoints,
-                      highlights: data.highlights,
+                      painPoints: data.painPoints || [],
+                      highlights: data.highlights || [],
                     },
                     isLoading: false,
                   },
@@ -177,7 +177,9 @@ function ResultsContent() {
                   },
                 }));
               }
-            } catch {}
+            } catch (e) {
+              console.error('SSE parse error:', e, 'Raw data:', line);
+            }
           }
         }
       }

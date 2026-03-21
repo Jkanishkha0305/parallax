@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         const page = await context.newPage();
 
         const summary = await runAgentLoop(page, persona, url, (step) => {
-          const data = JSON.stringify({ type: 'step', personaId, step });
+          const data = JSON.stringify({ type: 'step', personaId: persona.id, step });
           controller.enqueue(encoder.encode(`data: ${data}\n\n`));
         });
 

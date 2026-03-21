@@ -35,7 +35,7 @@ export async function runAgentLoop(
       role: 'user',
       parts: [
         {
-          text: `${persona.systemPrompt}\n\nYou are now navigating: ${url}\n\nStart exploring this website as your persona. Take actions to investigate the site's usability from your perspective. After 6-8 actions, you will be asked to summarize your experience.`,
+          text: `${persona.systemPrompt}\n\nYou are now navigating: ${url}\n\nExplore this website as your persona would. Use scroll, click, and navigate actions to investigate the layout, navigation, and content. Focus on observing the site — look around, explore menus, check different sections. Do NOT attempt to create accounts or submit personal data. After 6-8 actions you will summarize your experience.`,
         },
         {
           inlineData: {
@@ -61,11 +61,6 @@ export async function runAgentLoop(
       });
     } catch (err) {
       console.error('Gemini Computer Use error:', err);
-      // Safety acknowledgment errors: strip last message and retry once
-      if (String(err).includes('safety decision') && contents.length > 2) {
-        contents.pop();
-        continue;
-      }
       break;
     }
 
@@ -73,6 +68,8 @@ export async function runAgentLoop(
     if (!candidate?.content?.parts) break;
 
     const parts = candidate.content.parts;
+    // Log full part structure to diagnose safety acknowledgment
+    console.log('PARTS FROM GEMINI:', JSON.stringify(parts, null, 2));
     const functionCalls = parts.filter(p => p.functionCall);
     if (functionCalls.length === 0) break;
 
@@ -86,17 +83,21 @@ export async function runAgentLoop(
       const result = await executeFunctionCall(page, fc.name!, fc.args as Record<string, unknown>);
       stepDescription = result.description;
 
-      functionResponseParts.push({
+      // Include id + acknowledged at both levels to satisfy Gemini CU safety requirement
+      const functionResponsePart: Record<string, unknown> = {
         functionResponse: {
           name: fc.name!,
+          // Echo back the function call id if present
+          ...(fc.id ? { id: fc.id } : {}),
           response: {
-            success: result.success,
             output: result.description,
             url: result.url || page.url(),
-            acknowledged: true,
+            success: result.success,
           },
         },
-      } as Part);
+      };
+
+      functionResponseParts.push(functionResponsePart as Part);
     }
 
     const screenshot = await takeScreenshot(page);

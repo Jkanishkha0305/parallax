@@ -2,11 +2,12 @@ import { NextRequest } from 'next/server';
 import { launchBrowser, createContext } from '@/lib/browser';
 import { runAgentLoop } from '@/lib/agent-loop';
 import { PERSONAS } from '@/lib/personas';
+import { Persona } from '@/lib/types';
 
 export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
-  const { url: rawUrl, personaId } = await req.json();
+  const { url: rawUrl, personaId, personaData } = await req.json();
 
   // Normalize URL — add https:// if missing
   const url = rawUrl?.startsWith('http') ? rawUrl : `https://${rawUrl}`;
@@ -17,7 +18,9 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: 'Invalid URL' }), { status: 400 });
   }
 
-  const persona = PERSONAS.find(p => p.id === personaId);
+  // Use provided personaData if available, otherwise look up from PERSONAS array
+  const persona: Persona = personaData || PERSONAS.find(p => p.id === personaId);
+  
   if (!persona) {
     return new Response(JSON.stringify({ error: 'Unknown persona' }), { status: 400 });
   }

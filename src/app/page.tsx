@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import UrlInput from '@/components/url-input';
 import PersonaPicker from '@/components/persona-picker';
+import { Persona } from '@/lib/types';
 
-const ALL_PERSONAS = [
+const ALL_PERSONAS_IDS = [
   'speedrun-steve',
   'confused-clara', 
   'skeptical-sam',
@@ -15,29 +16,75 @@ const ALL_PERSONAS = [
 
 export default function Home() {
   const router = useRouter();
-  const [selectedPersonas, setSelectedPersonas] = useState<string[]>(ALL_PERSONAS);
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>(ALL_PERSONAS_IDS);
   const [url, setUrl] = useState('');
+  const [audience, setAudience] = useState('');
+  const [customPersonas, setCustomPersonas] = useState<Persona[] | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleTogglePersona = (id: string) => {
-    setSelectedPersonas(prev => 
-      prev.includes(id) 
-        ? prev.filter(p => p !== id)
-        : [...prev, id]
-    );
+    if (customPersonas) {
+      setSelectedPersonas(prev => 
+        prev.includes(id) 
+          ? prev.filter(p => p !== id)
+          : [...prev, id]
+      );
+    } else {
+      setSelectedPersonas(prev => 
+        prev.includes(id) 
+          ? prev.filter(p => p !== id)
+          : [...prev, id]
+      );
+    }
   };
 
-  const handleLaunch = (url: string) => {
+  const handleLaunch = async (inputUrl: string) => {
     if (selectedPersonas.length === 0) return;
-    const params = new URLSearchParams({
-      url,
-      personas: selectedPersonas.join(','),
-    });
-    router.push(`/results?${params.toString()}`);
+    
+    const finalUrl = inputUrl || url;
+    if (!finalUrl) return;
+
+    if (audience.trim()) {
+      setIsGenerating(true);
+      try {
+        const response = await fetch('/api/generate-personas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ audience: audience.trim() }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate personas');
+        }
+
+        const data = await response.json();
+        const generatedPersonas = data.personas;
+        
+        localStorage.setItem('custom-personas', JSON.stringify(generatedPersonas));
+        setCustomPersonas(generatedPersonas);
+        
+        const params = new URLSearchParams({
+          url: finalUrl,
+          personas: generatedPersonas.map((p: Persona) => p.id).join(','),
+          custom: 'true',
+        });
+        router.push(`/results?${params.toString()}`);
+      } catch (error) {
+        console.error('Error generating personas:', error);
+        setIsGenerating(false);
+      }
+    } else {
+      const params = new URLSearchParams({
+        url: finalUrl,
+        personas: selectedPersonas.join(','),
+      });
+      router.push(`/results?${params.toString()}`);
+    }
   };
 
   return (
@@ -86,9 +133,31 @@ export default function Home() {
         </div>
 
         {/* URL Input */}
-        <div className="mb-12 w-full max-w-2xl animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+        <div className="mb-6 w-full max-w-2xl animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           <div className="glass-card p-2">
             <UrlInput onSubmit={(u) => setUrl(u)} />
+          </div>
+        </div>
+
+        {/* Target Audience Input */}
+        <div className="mb-8 w-full max-w-2xl animate-fade-in-up" style={{ animationDelay: '0.35s' }}>
+          <div className="glass-card p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <label className="text-sm font-medium text-[#9ca3af]">Target Audience (optional)</label>
+            </div>
+            <textarea
+              value={audience}
+              onChange={(e) => setAudience(e.target.value)}
+              placeholder="e.g. college students in India, elderly Japanese users, startup CTOs..."
+              className="w-full px-4 py-3 bg-[#1a1a1a]/50 border border-[#333] rounded-xl text-white placeholder-[#444] focus:outline-none focus:border-purple-500/50 transition-colors resize-none"
+              rows={2}
+            />
+            <p className="mt-2 text-xs text-[#666]">
+              Leave blank to use default personas, or describe your target users to generate custom AI agents
+            </p>
           </div>
         </div>
 
@@ -101,17 +170,30 @@ export default function Home() {
         </div>
 
         {/* Launch Button */}
-        {selectedPersonas.length > 0 && url && (
+        {(selectedPersonas.length > 0 && url || audience.trim()) && (
           <div className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
             <button
               onClick={() => handleLaunch(url)}
-              className="group relative px-10 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 animate-pulse-glow"
+              disabled={isGenerating || !url}
+              className="group relative px-10 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 animate-pulse-glow disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <span className="relative z-10 flex items-center gap-3">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Launch {selectedPersonas.length} Agent{selectedPersonas.length > 1 ? 's' : ''}
+                {isGenerating ? (
+                  <>
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Generating Personas...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Launch {selectedPersonas.length} Agent{selectedPersonas.length > 1 ? 's' : ''}
+                  </>
+                )}
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </button>

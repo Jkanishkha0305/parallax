@@ -19,8 +19,10 @@ export default function ResultsPage() {
   const url = searchParams.get('url') || '';
   const personaIdsString = searchParams.get('personas') || '';
   const personaIds = personaIdsString ? personaIdsString.split(',') : [];
+  const isCustom = searchParams.get('custom') === 'true';
 
   const [personaStates, setPersonaStates] = useState<Record<string, PersonaState>>({});
+  const [personas, setPersonas] = useState<Persona[]>([]);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -28,8 +30,29 @@ export default function ResultsPage() {
   }, []);
 
   useEffect(() => {
+    if (!personaIdsString) return;
+
+    let activePersonas: Persona[];
+    
+    if (isCustom) {
+      try {
+        const stored = localStorage.getItem('custom-personas');
+        if (stored) {
+          activePersonas = JSON.parse(stored);
+        } else {
+          activePersonas = PERSONAS.filter(p => personaIds.includes(p.id));
+        }
+      } catch {
+        activePersonas = PERSONAS.filter(p => personaIds.includes(p.id));
+      }
+    } else {
+      activePersonas = PERSONAS.filter(p => personaIds.includes(p.id));
+    }
+
+    setPersonas(activePersonas);
+
     const initialStates: Record<string, PersonaState> = {};
-    PERSONAS.forEach(persona => {
+    activePersonas.forEach(persona => {
       initialStates[persona.id] = {
         steps: [],
         journey: null,
@@ -38,21 +61,24 @@ export default function ResultsPage() {
       };
     });
     setPersonaStates(initialStates);
-  }, [personaIdsString]);
+  }, [personaIdsString, isCustom]);
 
   useEffect(() => {
-    if (!url || !personaIdsString) return;
+    if (!url || !personaIdsString || personas.length === 0) return;
     personaIds.forEach((personaId) => {
-      runPersonaStream(personaId, url);
+      const persona = personas.find(p => p.id === personaId);
+      if (persona) {
+        runPersonaStream(personaId, url, persona);
+      }
     });
-  }, [url, personaIdsString]);
+  }, [url, personaIdsString, personas]);
 
-  const runPersonaStream = async (personaId: string, targetUrl: string) => {
+  const runPersonaStream = async (personaId: string, targetUrl: string, persona: Persona) => {
     try {
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: targetUrl, personaId }),
+        body: JSON.stringify({ url: targetUrl, personaId, personaData: persona }),
       });
 
       if (!response.ok) {
@@ -128,7 +154,7 @@ export default function ResultsPage() {
     }
   };
 
-  const selectedPersonas = PERSONAS.filter(p => personaIds.includes(p.id));
+  const selectedPersonas = personas.filter(p => personaIds.includes(p.id));
   const scores = Object.values(personaStates)
     .map(s => s.journey?.overallScore || 0)
     .filter(s => s > 0);
@@ -160,6 +186,14 @@ export default function ResultsPage() {
             </svg>
             <p className="text-[#888] text-sm break-all">{url}</p>
           </div>
+          {isCustom && (
+            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-purple-500/20 rounded-full border border-purple-500/30">
+              <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span className="text-sm text-purple-400">Custom Personas</span>
+            </div>
+          )}
         </div>
 
         {/* Overall Score */}

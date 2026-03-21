@@ -1,61 +1,26 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
-import * as chromium from '@sparticuz/chromium';
+import chromiumMin from '@sparticuz/chromium-min';
 
 export const SCREEN_WIDTH = 1440;
 export const SCREEN_HEIGHT = 900;
 
-let cachedBrowser: Browser | null = null;
+const CHROMIUM_DOWNLOAD_URL =
+  'https://github.com/Sparticuz/chromium/releases/download/v133.0.0/chromium-v133.0.0-pack.tar';
 
 export async function launchBrowser(): Promise<Browser> {
-  if (cachedBrowser && cachedBrowser.isConnected()) return cachedBrowser;
-  
-  const isVercel = process.env.VERCEL === '1';
-  
-  if (isVercel) {
-    try {
-      // Configure @sparticuz/chromium for serverless environment
-      await chromium.setHeadlessMode(true);
-      
-      // Get executable path from @sparticuz/chromium
-      const chromiumPath = await chromium.executablePath;
-      
-      console.log('Launching Chromium from:', chromiumPath);
-      
-      cachedBrowser = await chromium.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--disable-software-rasterizer',
-          '--disable-extensions',
-          '--disable-background-networking',
-          '--disable-default-apps',
-          '--disable-sync',
-          '--metrics-recording-only',
-          '--mute-audio',
-          '--no-first-run',
-          '--safebrowsing-disable-auto-update',
-        ],
-        executablePath: chromiumPath || undefined,
-        channel: undefined, // Don't use system chrome
-      });
-      
-      return cachedBrowser;
-    } catch (err) {
-      console.error('Failed to launch browser:', err);
-      throw err;
-    }
+  if (process.env.VERCEL === '1') {
+    const executablePath = await chromiumMin.executablePath(CHROMIUM_DOWNLOAD_URL);
+    return chromium.launch({
+      args: [...chromiumMin.args, '--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath,
+      headless: true,
+    });
   }
 
-  // Local development - use Playwright's bundled chromium
-  cachedBrowser = await chromium.launch({
+  return chromium.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
-  
-  return cachedBrowser;
 }
 
 export async function createContext(browser: Browser): Promise<BrowserContext> {
@@ -86,11 +51,7 @@ export async function executeFunctionCall(
   try {
     switch (name) {
       case 'open_web_browser': {
-        return { 
-          success: true, 
-          description: 'Browser is ready',
-          url: page.url()
-        };
+        return { success: true, description: 'Browser is ready', url: page.url() };
       }
       case 'click_at':
       case 'click_element': {
@@ -151,7 +112,7 @@ export async function executeFunctionCall(
       case 'wait':
       case 'wait_5_seconds': {
         await page.waitForTimeout(5000);
-        return { success: true, description: `Waited 5 seconds`, url: page.url() };
+        return { success: true, description: 'Waited 5 seconds', url: page.url() };
       }
       case 'press_key':
       case 'key_press': {

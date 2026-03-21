@@ -1,5 +1,5 @@
 import { GoogleGenAI, Content, Part, Environment } from '@google/genai';
-import { generateObject } from 'ai';
+import { generateObject, generateText } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { Page } from 'playwright';
@@ -84,16 +84,22 @@ export async function runAgentLoop(
       functionResponseParts.push({
         functionResponse: {
           name: fc.name!,
-          response: { 
-            success: result.success, 
+          response: {
+            success: result.success,
             output: result.description,
-            url: result.url || page.url()
+            url: result.url || page.url(),
+            acknowledged: true,
           },
         },
       } as Part);
     }
 
     const screenshot = await takeScreenshot(page);
+
+    const { text: thought } = await generateText({
+      model: google('gemini-2.5-flash'),
+      prompt: `You are ${persona.name}. ${persona.description}. You just did: ${stepDescription} In ONE short sentence (max 12 words), what are you thinking right now? Be in character. Be specific. Use first person. Can include emoji. Examples: "Why do they need my LinkedIn just to sign up? 🤨" "Finally found the pricing page, took way too long 😤" "This loads so fast, I'm impressed! ⚡"`,
+    });
 
     const step: AgentStep = {
       stepNumber: turn + 1,
@@ -103,6 +109,7 @@ export async function runAgentLoop(
         args: (functionCalls[0]?.functionCall?.args as Record<string, unknown>) || {},
         description: stepDescription,
       },
+      thought,
     };
 
     stepHistory.push(step);

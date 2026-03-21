@@ -119,7 +119,7 @@ export default function JourneyCard({
               {steps.map((step, idx) => (
                 <div key={idx} className="flex gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
                   {/* Screenshot */}
-                  <div className="w-28 h-18 rounded-lg overflow-hidden flex-shrink-0 bg-[#1a1a1a] border border-white/5">
+                  <div className="relative w-32 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-[#1a1a1a] border border-white/5">
                     {step.screenshot && (
                       <img 
                         src={`data:image/png;base64,${step.screenshot}`} 
@@ -129,17 +129,27 @@ export default function JourneyCard({
                     )}
                   </div>
                   
-                  {/* Action info */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <div className="flex items-center gap-2 mb-1">
+                  {/* Action info + Thought bubble */}
+                  <div className="flex-1 min-w-0 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
                       <span className={`w-6 h-6 rounded-md ${config.bg} flex items-center justify-center text-xs font-medium ${config.text}`}>
                         {step.stepNumber}
                       </span>
                       <span className="text-xs text-[#555]">Step</span>
                     </div>
-                    <p className="text-sm text-[#aaa] truncate leading-relaxed">
+                    <p className="text-sm text-[#aaa] leading-relaxed">
                       {step.action.description}
                     </p>
+                    {step.thought && (
+                      <div className="flex items-start gap-2">
+                        <div className={`w-6 h-6 rounded-full ${config.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                          <span className="text-xs">{persona.emoji}</span>
+                        </div>
+                        <div className={`px-3 py-2 rounded-2xl rounded-tl-none ${config.bg} border ${config.border}`}>
+                          <p className="text-xs text-[#ccc] leading-relaxed">{step.thought}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

@@ -17,6 +17,7 @@ export interface AgentStep {
   stepNumber: number;
   screenshot: string;
   action: AgentAction;
+  thought?: string;
 }
 
 export interface PersonaJourney {

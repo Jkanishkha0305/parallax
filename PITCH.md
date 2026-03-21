@@ -2,116 +2,77 @@
 
 ---
 
-## [0:00–0:20] THE HOOK
+## [0:00] HOOK
 
-> "Raise your hand if your team has ever shipped a feature, felt great about it —
-> and then watched your conversion rate quietly die."
-
-> "That's because you built it for yourself. Not for your users."
-
-> "Real user testing takes 2 weeks and $10,000. Most startups skip it entirely.
-> I built something that does it in 60 seconds — for free."
+> "Every UX bug you ship costs you users. But how do you actually know what users
+> experience before they leave?"
 
 ---
 
-## [0:20–0:40] THE PRODUCT
+## [0:30] PROBLEM
 
-> "This is **Parallax**."
-
-> "You paste any URL. Five AI personas simultaneously launch real browsers,
-> navigate your site exactly like a human would, and tell you what's broken —
-> from five completely different perspectives."
-
-> "Not static analysis. Not heatmaps. Real agents. Real browsers. Real friction."
+> "Traditional UX testing is slow, expensive, and doesn't scale. You can't hire
+> testers for every feature. Static analysis only catches code — not confusion,
+> frustration, or accessibility failures. By the time you find out, users are
+> already gone."
 
 ---
 
-## [0:40–1:30] LIVE DEMO
+## [1:00] SOLUTION
 
-> "Let me show you. I'll use Stripe."
+> "We built Parallax — an autonomous UX testing agent powered by Gemini 2.5
+> Computer Use. You give it any URL, and it launches 5 AI personas simultaneously:"
 
-**[ Paste stripe.com → hit Analyze ]**
+> "Speedrun Steve finds unnecessary friction. Confused Clara spots unclear labels.
+> Skeptical Sam flags dark patterns. Accessible Alex catches accessibility failures.
+> Global Gita finds i18n gaps."
 
-> "Five agents just launched. Watch the screenshots stream in."
-
-> "This is powered by **Gemini 2.5 Computer Use** — the same technology that
-> lets AI actually see a screen and decide where to click next, like a human."
-
-**[ Point to first screenshot appearing ]**
-
-> "That's Steve — our power user. He just clicked the pricing link.
-> He's already annoyed it took two clicks to find it."
-
-**[ Point to thought bubble ]**
-
-> "These are their inner thoughts — generated in character, in real time."
-
-> "Clara is confused by the navigation. Sam is already suspicious of the cookie banner.
-> Alex is checking if the keyboard shortcuts work."
-
-> "These aren't bots filling out forms. These are personas with personalities,
-> goals, and frustrations — navigating your product the way real users do."
+> "These aren't bots — they're agents that actually see your UI and navigate it
+> like a human."
 
 ---
 
-## [1:30–2:00] THE RESULTS
+## [1:45] DEMO
 
-**[ Show final score card ]**
+> "Let me show you. I'll paste a URL, hit analyze, and in under 60 seconds —
+> 5 agents are navigating, taking screenshots, and generating thought bubbles
+> in real-time. Each one reports pain points, gives you a score, and tells you
+> exactly what to fix."
 
-> "Here's the full report. Parallax Score: **7.2 out of 10.**
-> That's the average across all five personas."
-
-**[ Click into Steve's journey ]**
-
-> "Every step. Every screenshot. Every thought."
-
-> "Steve says: *'Pricing is buried under two dropdowns — I almost left.'*"
-> "Clara says: *'I have no idea what this product actually does from the homepage.'*"
-
-**[ Hit AI Suggestions ]**
-
-> "And here — Gemini generates specific, actionable fixes.
-> Not just complaints. Actual recommendations you can ship tomorrow."
+**[ Paste URL → hit Analyze → narrate screenshots streaming in ]**
 
 ---
 
-## [2:00–2:30] WHY IT'S DIFFERENT
+## [2:00] USE CASE
 
-> "Every other tool tells you **what happened.**"
-> "Hotjar shows heatmaps. Analytics shows drop-off. A/B tests show winners."
+> "Here's a real scenario. A startup is about to launch their onboarding flow.
+> Their engineers think it's clean. Their designer thinks it's intuitive."
 
-> "But none of them tell you **why.**"
+> "They run Parallax. Clara can't find the 'skip' button. Sam refuses to connect
+> his Google account because there's no privacy policy linked. Alex can't tab
+> through the form at all."
 
-> "Parallax doesn't analyze your logs after the fact.
-> It **becomes your users** before you even have users."
+> "Three critical bugs. Found in 60 seconds. Before a single real user saw it."
 
-> "That's what Gemini Computer Use makes possible —
-> an AI that doesn't just read your site. It **uses** your site."
-
-| | Parallax | Hotjar | User Interviews |
-|---|---|---|---|
-| **Time** | 60 seconds | Days of data | 2–4 weeks |
-| **Cost** | Free* | $500/mo | $5K–$50K |
-| **Why it broke** | ✅ Yes | ❌ No | ✅ Yes |
-| **Before launch** | ✅ Yes | ❌ No | ✅ Yes |
+> "That's the value — not after launch, not from support tickets, not from churn.
+> Before it ships."
 
 ---
 
-## [2:30–3:00] THE CLOSE
+## [2:15] IMPACT
 
-> "Every product team ships blind."
-> "They guess what their users feel. They hope the onboarding makes sense.
-> They find out it doesn't — three weeks after launch."
+> "No static analysis. No surveys. No user lab. Just paste a URL, get actionable
+> UX insights in seconds. Parallax Score tells you how your site performs.
+> AI-generated suggestions tell you what to fix first. GitHub integration tells
+> you which files to touch."
 
-> "Parallax ends the guessing."
+---
 
-> "Point it at your product before your next launch.
-> Know your blind spots in **60 seconds.**"
+## [2:45] CLOSE
 
-> "Built with **Gemini 2.5 Computer Use** and the **Vercel AI SDK**
-> at the Cerebral Valley × Vercel × DeepMind Hackathon."
+> "Parallax — real user insights from AI agents."
 
-> "Thank you."
+> "Because your users won't fill out a feedback form. They'll just leave."
 
 ---
 
@@ -119,29 +80,29 @@
 
 | Section | Time | What to Do |
 |---|---|---|
-| Hook | 0:00–0:20 | Eye contact, no demo yet |
-| Product intro | 0:20–0:40 | One sentence, keep it simple |
-| Live demo | 0:40–1:30 | Paste URL, narrate what's happening |
-| Results | 1:30–2:00 | Read a quote, hit suggestions |
-| Why different | 2:00–2:30 | Point to the table |
-| Close | 2:30–3:00 | Slow down, make it land |
+| Hook | 0:00 | Eye contact, no demo yet |
+| Problem | 0:30 | Let it sink in |
+| Solution | 1:00 | Name each persona clearly |
+| Demo | 1:45 | Paste URL, narrate live |
+| Use Case | 2:00 | Tell the startup story |
+| Impact | 2:15 | Point to the score + suggestions |
+| Close | 2:45 | Slow down, make it land |
 
 ---
 
 ## Key Lines to Memorize
 
-- *"Real browsers. Real clicks. Real friction."*
-- *"It doesn't analyze your site — it becomes your users."*
-- *"Know your blind spots in 60 seconds."*
-- *"Not fake. Not pre-recorded. That's a real browser."*
+- *"These aren't bots — they're agents that actually see your UI."*
+- *"Three critical bugs. Found in 60 seconds. Before a single real user saw it."*
+- *"Your users won't fill out a feedback form. They'll just leave."*
 
 ---
 
 ## If the Demo is Slow
 
 > *"First request spins up a fresh browser on a serverless function —
-> you're watching a cold start live. This is actually the most honest demo
-> I could give you. No pre-recorded fakes. Real infrastructure."*
+> you're watching a cold start live. No pre-recorded fakes.
+> Real infrastructure, real browser."*
 
 ---
 
@@ -152,7 +113,8 @@
 | "Is it a real browser?" | "Yes — Playwright headless Chromium. Gemini sees actual screenshots and clicks." |
 | "How is this different from Hotjar?" | "Hotjar records real users after the fact. This runs before you have users." |
 | "Can it test any site?" | "Any public URL. Paste and go." |
-| "What is Gemini Computer Use doing?" | "It sees a screenshot and decides where to click next — like a human would. No CSS selectors. No scripts." |
+| "What is Gemini Computer Use doing?" | "It sees a screenshot and decides where to click — like a human. No DOM, no CSS selectors." |
+| "Why Vercel AI SDK?" | "For structured output — generateObject with Zod gives type-safe summaries. The raw Google SDK handles Computer Use since Vercel AI SDK doesn't support it yet." |
 | "How do you make money?" | "SaaS — per analysis or monthly subscription. Every product team is a customer." |
 | "What's next?" | "Scheduled runs, CI/CD integration, regression testing between deploys." |
 

@@ -1,9 +1,21 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
+import chromiumPkg from '@sparticuz/chromium';
 
 export const SCREEN_WIDTH = 1440;
 export const SCREEN_HEIGHT = 900;
 
 export async function launchBrowser(): Promise<Browser> {
+  const isServerless = process.env.VERCEL === '1' || process.env.PLAYWRIGHT_BROWSERS_PATH === '/tmp';
+
+  if (isServerless) {
+    const executablePath = await chromiumPkg.executablePath();
+    return chromium.launch({
+      args: [...chromiumPkg.args, '--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath,
+      headless: true,
+    });
+  }
+
   return chromium.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],

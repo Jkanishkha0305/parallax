@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  🎯 <a href="https://parallax.demo">Live Demo</a> • 📖 <a href="#problem-statement">Problem</a> • 🏗️ <a href="#architecture">Architecture</a> • 🚀 <a href="#getting-started">Get Started</a>
+  🎯 <a href="https://parallax-ux.vercel.app">Live Demo</a> • 📖 <a href="#problem-statement">Problem</a> • 🏗️ <a href="#architecture">Architecture</a> • 🚀 <a href="#getting-started">Get Started</a>
 </p>
 
 ---
@@ -140,7 +140,7 @@ Parallax is an **autonomous UX testing agent** that:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/parallax.git
+git clone https://github.com/Jkanishkha0305/parallax.git
 cd parallax
 
 # Install dependencies
@@ -148,7 +148,7 @@ npm install
 
 # Set up environment variables
 cp .env.example .env.local
-# Edit .env.local and add your GEMINI_API_KEY
+# Edit .env.local and add your GOOGLE_GENERATIVE_AI_API_KEY
 ```
 
 ### Development

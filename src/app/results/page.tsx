@@ -108,20 +108,10 @@ function ResultsContent() {
 
   useEffect(() => {
     if (!url || !personaIdsString || personas.length === 0) return;
-    
-    // Run sequentially to avoid resource exhaustion
-    const runAll = async () => {
-      for (const personaId of personaIds) {
-        const persona = personas.find(p => p.id === personaId);
-        if (persona) {
-          await runPersonaStream(personaId, url, persona);
-          // Small delay between agents
-          await new Promise(r => setTimeout(r, 1000));
-        }
-      }
-    };
-    
-    runAll();
+    personaIds.forEach((personaId) => {
+      const persona = personas.find(p => p.id === personaId);
+      if (persona) runPersonaStream(personaId, url, persona);
+    });
   }, [url, personaIdsString, personas]);
 
   const runPersonaStream = async (personaId: string, targetUrl: string, persona: Persona) => {

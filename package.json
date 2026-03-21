@@ -7,14 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "playwright install --with-deps chromium"
+    "postinstall": "node -e \"if (process.env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD !== '1') { require('child_process').execSync('npx playwright install chromium', {stdio: 'inherit'}) }\""
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.52",
     "@google/genai": "^1.46.0",
     "ai": "^6.0.134",
     "next": "16.2.1",
-    "playwright": "^1.58.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.3.6"
@@ -26,6 +25,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "playwright": "^1.58.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

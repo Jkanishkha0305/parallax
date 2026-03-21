@@ -1,8 +1,8 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import chromiumMin from '@sparticuz/chromium-min';
 
-export const SCREEN_WIDTH = 1440;
-export const SCREEN_HEIGHT = 900;
+export const SCREEN_WIDTH = 1280;
+export const SCREEN_HEIGHT = 800;
 
 const CHROMIUM_DOWNLOAD_URL =
   'https://github.com/Sparticuz/chromium/releases/download/v133.0.0/chromium-v133.0.0-pack.tar';
@@ -10,11 +10,19 @@ const CHROMIUM_DOWNLOAD_URL =
 export async function launchBrowser(): Promise<Browser> {
   if (process.env.VERCEL === '1') {
     const executablePath = await chromiumMin.executablePath(CHROMIUM_DOWNLOAD_URL);
-    return chromium.launch({
-      args: [...chromiumMin.args, '--no-sandbox', '--disable-setuid-sandbox'],
-      executablePath,
-      headless: true,
-    });
+
+    // Filter out CDPScreenshotNewSurface — causes GPU shared-memory failures in serverless
+    const safeArgs = chromiumMin.args
+      .filter(arg => !arg.includes('CDPScreenshotNewSurface'))
+      .concat([
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-features=CDPScreenshotNewSurface',
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+      ]);
+
+    return chromium.launch({ args: safeArgs, executablePath, headless: true });
   }
 
   return chromium.launch({
@@ -32,7 +40,7 @@ export async function createContext(browser: Browser): Promise<BrowserContext> {
 }
 
 export async function takeScreenshot(page: Page): Promise<string> {
-  const buffer = await page.screenshot({ type: 'png' });
+  const buffer = await page.screenshot({ type: 'jpeg', quality: 70 });
   return buffer.toString('base64');
 }
 

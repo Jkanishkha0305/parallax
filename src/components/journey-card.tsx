@@ -122,7 +122,7 @@ export default function JourneyCard({
                   <div className="relative w-32 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-[#1a1a1a] border border-white/5">
                     {step.screenshot && (
                       <img 
-                        src={`data:image/png;base64,${step.screenshot}`} 
+                        src={`data:image/jpeg;base64,${step.screenshot}`} 
                         alt={`Step ${step.stepNumber}`}
                         className="w-full h-full object-cover"
                       />

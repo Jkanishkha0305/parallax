@@ -1,0 +1,17 @@
+Project Description
+Parallax is an autonomous UX testing agent that launches 5 AI personas simultaneously to navigate any website and report real friction. Powered by Gemini 2.5 Computer Use API, each persona actually sees and interacts with your site like a real user — clicking, scrolling, reading. Speedrun Steve finds unnecessary friction. Confused Clara spots unclear labels. Skeptical Sam flags dark patterns. Accessible Alex catches a11y failures. Global Gita finds i18n gaps. Results stream live with screenshots, thought bubbles, and a Parallax Score in under 60 seconds. No static analysis — real agent journeys on real browsers.
+
+Public GitHub Repository
+https://github.com/Jkanishkha0305/parallax
+
+Partner Technologies Used
+Vercel (Next.js deployment, Vercel AI SDK), Google (Gemini 2.5 Computer Use API, Gemini 2.5 Flash)
+
+Did you try out the technology from Vercel?
+Yes — heavily. We used the Vercel AI SDK's generateObject and generateText throughout the agent loop. generateObject with Zod schemas gave us perfectly structured UX summaries from each persona. generateText powered per-step thought bubbles in character. Streaming SSE from Next.js API routes let us push live screenshots and persona thoughts to the frontend as they happened. The DX was excellent — schema-validated structured outputs saved us a ton of prompt engineering.
+
+Did you try out the technology from Google?
+Yes — Gemini 2.5 Computer Use is the core of the entire product. Each persona agent sends a screenshot to Gemini and receives back function calls (click_at, scroll, navigate, type_text) with normalized coordinates. Gemini literally sees the UI and decides what to click next — no CSS selectors, no DOM parsing. It's genuinely impressive how well it understands layouts, buttons, and navigation flows on arbitrary websites. We also used Gemini 2.5 Flash for thought bubbles and persona summaries via the Vercel AI SDK.
+
+Feedback for Cerebral Valley
+Fantastic event — the energy was incredible. One suggestion: a shared staging environment or API rate limit increase for demo day would help. Running 5 parallel Gemini Computer Use agents per submission burns through quota fast when judges are testing live. A "hackathon tier" API key with higher limits during judging would make demos much smoother.

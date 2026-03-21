@@ -108,12 +108,17 @@ function ResultsContent() {
 
   useEffect(() => {
     if (!url || !personaIdsString || personas.length === 0) return;
-    personaIds.forEach((personaId) => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    personaIds.forEach((personaId, index) => {
       const persona = personas.find(p => p.id === personaId);
       if (persona) {
-        runPersonaStream(personaId, url, persona);
+        const t = setTimeout(() => {
+          runPersonaStream(personaId, url, persona);
+        }, index * 20000); // stagger 20s apart — max 2 browsers at once
+        timers.push(t);
       }
     });
+    return () => timers.forEach(clearTimeout);
   }, [url, personaIdsString, personas]);
 
   const runPersonaStream = async (personaId: string, targetUrl: string, persona: Persona) => {

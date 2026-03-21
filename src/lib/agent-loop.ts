@@ -67,15 +67,16 @@ export async function runAgentLoop(
     const candidate = response.candidates?.[0];
     if (!candidate?.content?.parts) break;
 
-    contents.push({ role: 'model', parts: candidate.content.parts });
+    const parts = candidate.content.parts;
+    const functionCalls = parts.filter(p => p.functionCall);
+    if (functionCalls.length === 0) break;
 
-    const functionCallParts = candidate.content.parts.filter((p: Part) => p.functionCall);
-    if (functionCallParts.length === 0) break;
+    contents.push({ role: 'model', parts });
 
     const functionResponseParts: Part[] = [];
     let stepDescription = '';
 
-    for (const part of functionCallParts) {
+    for (const part of functionCalls) {
       const fc = part.functionCall!;
       const result = await executeFunctionCall(page, fc.name!, fc.args as Record<string, unknown>);
       stepDescription = result.description;
@@ -98,8 +99,8 @@ export async function runAgentLoop(
       stepNumber: turn + 1,
       screenshot,
       action: {
-        name: functionCallParts[0]?.functionCall?.name || 'unknown',
-        args: (functionCallParts[0]?.functionCall?.args as Record<string, unknown>) || {},
+        name: functionCalls[0]?.functionCall?.name || 'unknown',
+        args: (functionCalls[0]?.functionCall?.args as Record<string, unknown>) || {},
         description: stepDescription,
       },
     };

@@ -111,6 +111,14 @@ export async function executeFunctionCall(
         await page.waitForTimeout(500);
         return { success: true, description: `Pressed ${key}`, url: page.url() };
       }
+      case 'key_combination': {
+        const { keys } = args as { keys: string[] };
+        for (const key of keys) {
+          await page.keyboard.press(key);
+          await page.waitForTimeout(100);
+        }
+        return { success: true, description: `Pressed keys: ${keys.join('+')}`, url: page.url() };
+      }
       case 'get_current_url': {
         return { success: true, description: `Current URL: ${page.url()}`, url: page.url() };
       }

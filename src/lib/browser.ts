@@ -44,6 +44,7 @@ export async function executeFunctionCall(
           url: page.url()
         };
       }
+      case 'click_at':
       case 'click_element': {
         const { x, y } = args as { x: number; y: number };
         const { px, py } = denormalize(x, y);
@@ -58,7 +59,8 @@ export async function executeFunctionCall(
         await page.waitForTimeout(500);
         return { success: true, description: `Hovered at (${px}, ${py})`, url: page.url() };
       }
-      case 'type_text': {
+      case 'type_text':
+      case 'type_text_at': {
         const { text, x, y } = args as { text: string; x?: number; y?: number };
         if (x !== undefined && y !== undefined) {
           const { px, py } = denormalize(x, y);
@@ -68,24 +70,42 @@ export async function executeFunctionCall(
         await page.waitForTimeout(500);
         return { success: true, description: `Typed "${text}"`, url: page.url() };
       }
-      case 'scroll': {
+      case 'scroll':
+      case 'scroll_document': {
         const { direction } = args as { direction: string };
         const delta = direction === 'up' ? -500 : 500;
         await page.mouse.wheel(0, delta);
         await page.waitForTimeout(500);
         return { success: true, description: `Scrolled ${direction}`, url: page.url() };
       }
+      case 'navigate':
       case 'navigate_to_url': {
         const { url } = args as { url: string };
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
         await page.waitForTimeout(2000);
         return { success: true, description: `Navigated to ${url}`, url: page.url() };
       }
-      case 'wait': {
-        await page.waitForTimeout(2000);
-        return { success: true, description: 'Waited 2 seconds', url: page.url() };
+      case 'search': {
+        const { query } = args as { query: string };
+        return { success: true, description: `Searched for "${query}"`, url: page.url() };
       }
-      case 'press_key': {
+      case 'go_back': {
+        await page.goBack();
+        await page.waitForTimeout(1000);
+        return { success: true, description: 'Went back', url: page.url() };
+      }
+      case 'go_forward': {
+        await page.goForward();
+        await page.waitForTimeout(1000);
+        return { success: true, description: 'Went forward', url: page.url() };
+      }
+      case 'wait':
+      case 'wait_5_seconds': {
+        await page.waitForTimeout(5000);
+        return { success: true, description: `Waited 5 seconds`, url: page.url() };
+      }
+      case 'press_key':
+      case 'key_press': {
         const { key } = args as { key: string };
         await page.keyboard.press(key);
         await page.waitForTimeout(500);

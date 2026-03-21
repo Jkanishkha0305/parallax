@@ -1,6 +1,6 @@
-import { launchBrowser, createContext } from '../src/lib/browser';
-import { runAgentLoop } from '../src/lib/agent-loop';
-import { PERSONAS } from '../src/lib/personas';
+import { launchBrowser, createContext } from '../src/lib/browser.js';
+import { runAgentLoop } from '../src/lib/agent-loop.js';
+import { PERSONAS } from '../src/lib/personas.js';
 
 async function testAgentLoop() {
   console.log('Testing agent loop...');

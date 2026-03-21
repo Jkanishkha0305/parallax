@@ -6,7 +6,16 @@ import { PERSONAS } from '@/lib/personas';
 export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
-  const { url, personaId } = await req.json();
+  const { url: rawUrl, personaId } = await req.json();
+
+  // Normalize URL — add https:// if missing
+  const url = rawUrl?.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+
+  try {
+    new URL(url);
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid URL' }), { status: 400 });
+  }
 
   const persona = PERSONAS.find(p => p.id === personaId);
   if (!persona) {
@@ -18,6 +27,12 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       let browser;
       let context;
+
+      // Keepalive ping every 15s to prevent Vercel from dropping the connection
+      const keepalive = setInterval(() => {
+        try { controller.enqueue(encoder.encode(': ping\n\n')); } catch {}
+      }, 15000);
+
       try {
         browser = await launchBrowser();
         context = await createContext(browser);
@@ -45,6 +60,7 @@ export async function POST(req: NextRequest) {
         });
         controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
       } finally {
+        clearInterval(keepalive);
         if (context) await context.close();
         if (browser) await browser.close();
         controller.close();

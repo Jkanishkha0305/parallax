@@ -17,10 +17,11 @@ interface PersonaState {
 export default function ResultsPage() {
   const searchParams = useSearchParams();
   const url = searchParams.get('url') || '';
-  const personaIds = searchParams.get('personas')?.split(',') || [];
+  const personaIdsString = searchParams.get('personas') || '';
+  const personaIds = personaIdsString ? personaIdsString.split(',') : [];
 
   const [personaStates, setPersonaStates] = useState<Record<string, PersonaState>>({});
-  const [urlToAnalyze, setUrlToAnalyze] = useState(url);
+  const [urlToAnalyze] = useState(url);
 
   // Initialize states
   useEffect(() => {
@@ -34,16 +35,17 @@ export default function ResultsPage() {
       };
     });
     setPersonaStates(initialStates);
-  }, [personaIds]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personaIdsString]);
 
   // Run SSE streams
   useEffect(() => {
-    if (!url || personaIds.length === 0) return;
-
+    if (!url || !personaIdsString) return;
     personaIds.forEach((personaId) => {
       runPersonaStream(personaId, url);
     });
-  }, [url, personaIds]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, personaIdsString]);
 
   const runPersonaStream = async (personaId: string, targetUrl: string) => {
     try {

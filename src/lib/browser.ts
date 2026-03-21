@@ -1,25 +1,61 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
-import chromiumPkg from '@sparticuz/chromium';
+import * as chromium from '@sparticuz/chromium';
 
 export const SCREEN_WIDTH = 1440;
 export const SCREEN_HEIGHT = 900;
 
-export async function launchBrowser(): Promise<Browser> {
-  const isServerless = process.env.VERCEL === '1' || process.env.PLAYWRIGHT_BROWSERS_PATH === '/tmp';
+let cachedBrowser: Browser | null = null;
 
-  if (isServerless) {
-    const executablePath = await chromiumPkg.executablePath();
-    return chromium.launch({
-      args: [...chromiumPkg.args, '--no-sandbox', '--disable-setuid-sandbox'],
-      executablePath,
-      headless: true,
-    });
+export async function launchBrowser(): Promise<Browser> {
+  if (cachedBrowser && cachedBrowser.isConnected()) return cachedBrowser;
+  
+  const isVercel = process.env.VERCEL === '1';
+  
+  if (isVercel) {
+    try {
+      // Configure @sparticuz/chromium for serverless environment
+      await chromium.setHeadlessMode(true);
+      
+      // Get executable path from @sparticuz/chromium
+      const chromiumPath = await chromium.executablePath;
+      
+      console.log('Launching Chromium from:', chromiumPath);
+      
+      cachedBrowser = await chromium.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+          '--disable-extensions',
+          '--disable-background-networking',
+          '--disable-default-apps',
+          '--disable-sync',
+          '--metrics-recording-only',
+          '--mute-audio',
+          '--no-first-run',
+          '--safebrowsing-disable-auto-update',
+        ],
+        executablePath: chromiumPath || undefined,
+        channel: undefined, // Don't use system chrome
+      });
+      
+      return cachedBrowser;
+    } catch (err) {
+      console.error('Failed to launch browser:', err);
+      throw err;
+    }
   }
 
-  return chromium.launch({
+  // Local development - use Playwright's bundled chromium
+  cachedBrowser = await chromium.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
+  
+  return cachedBrowser;
 }
 
 export async function createContext(browser: Browser): Promise<BrowserContext> {
@@ -127,8 +163,8 @@ export async function executeFunctionCall(
       case 'key_combination': {
         const rawKeys = args.keys;
         const keys = Array.isArray(rawKeys) ? rawKeys : String(rawKeys).split('+');
-        for (const key of keys) {
-          await page.keyboard.press(key);
+        for (const k of keys) {
+          await page.keyboard.press(k);
           await page.waitForTimeout(100);
         }
         return { success: true, description: `Pressed keys: ${keys.join('+')}`, url: page.url() };

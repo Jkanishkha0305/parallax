@@ -225,11 +225,17 @@ function ResultsContent() {
 
   const analyzeRepo = async () => {
     if (!githubUrl.trim()) return;
+    
+    const allPainPoints = selectedPersonas
+      .flatMap(p => personaStates[p.id]?.journey?.painPoints || []);
+    
+    if (allPainPoints.length === 0) {
+      alert('Please wait for at least one persona to complete analysis before linking to GitHub');
+      return;
+    }
+    
     setIsAnalyzingRepo(true);
     try {
-      const allPainPoints = selectedPersonas
-        .flatMap(p => personaStates[p.id]?.journey?.painPoints || []);
-      
       const response = await fetch('/api/analyze-repo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -476,7 +482,7 @@ function ResultsContent() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">GitHub Integration</h3>
-                  <p className="text-sm text-[#666]">Link pain points to code files</p>
+                  <p className="text-sm text-[#666]">AI suggests which files to review based on pain points</p>
                 </div>
               </div>
 

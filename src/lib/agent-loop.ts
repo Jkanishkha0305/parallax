@@ -61,6 +61,11 @@ export async function runAgentLoop(
       });
     } catch (err) {
       console.error('Gemini Computer Use error:', err);
+      // Safety acknowledgment errors: strip last message and retry once
+      if (String(err).includes('safety decision') && contents.length > 2) {
+        contents.pop();
+        continue;
+      }
       break;
     }
 

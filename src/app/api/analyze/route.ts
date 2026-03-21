@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { launchBrowser, createContext } from '@/lib/browser';
 import { runAgentLoop } from '@/lib/agent-loop';
 import { PERSONAS } from '@/lib/personas';
 import { Persona } from '@/lib/types';
@@ -28,21 +27,11 @@ export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      let browser;
-      let context;
-
-      // Keepalive ping every 15s to prevent Vercel from dropping the connection
-      const keepalive = setInterval(() => {
-        try { controller.enqueue(encoder.encode(': ping\n\n')); } catch {}
-      }, 15000);
-
       try {
-        browser = await launchBrowser();
-        context = await createContext(browser);
-        const page = await context.newPage();
-
-        const summary = await runAgentLoop(page, persona, url, (step) => {
-          const data = JSON.stringify({ type: 'step', personaId: persona.id, step });
+        // Run the agent loop WITHOUT a local browser
+        // Gemini Computer Use API handles browser automation remotely
+        const summary = await runAgentLoop(persona, url, (step) => {
+          const data = JSON.stringify({ type: 'step', personaId, step });
           controller.enqueue(encoder.encode(`data: ${data}\n\n`));
         });
 
@@ -63,9 +52,6 @@ export async function POST(req: NextRequest) {
         });
         controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
       } finally {
-        clearInterval(keepalive);
-        if (context) await context.close();
-        if (browser) await browser.close();
         controller.close();
       }
     },

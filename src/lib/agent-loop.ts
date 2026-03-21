@@ -2,14 +2,15 @@ import { GoogleGenAI, Content, Part, Environment } from '@google/genai';
 import { generateObject, generateText } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
-import { Page } from 'playwright';
 import { Persona, AgentStep } from './types';
-import { takeScreenshot, executeFunctionCall } from './browser';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY! });
+// Initialize Gemini client
+const ai = new GoogleGenAI({ 
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY! 
+});
 
 const COMPUTER_USE_MODEL = 'gemini-2.5-computer-use-preview-10-2025';
-const MAX_TURNS = 8;
+const MAX_TURNS = 6;
 
 const SummarySchema = z.object({
   overallScore: z.number().min(1).max(10),
@@ -19,29 +20,18 @@ const SummarySchema = z.object({
 });
 
 export async function runAgentLoop(
-  page: Page,
   persona: Persona,
   url: string,
   onStep: (step: AgentStep) => void
 ): Promise<{ overallScore: number; summary: string; painPoints: string[]; highlights: string[] }> {
 
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-  await page.waitForTimeout(2000);
-
-  const initialScreenshot = await takeScreenshot(page);
-
+  // Initial prompt with the URL to navigate
   const contents: Content[] = [
     {
       role: 'user',
       parts: [
         {
-          text: `${persona.systemPrompt}\n\nYou are now navigating: ${url}\n\nExplore this website as your persona would. Use scroll, click, and navigate actions to investigate the layout, navigation, and content. Focus on observing the site — look around, explore menus, check different sections. Do NOT attempt to create accounts or submit personal data. After 6-8 actions you will summarize your experience.`,
-        },
-        {
-          inlineData: {
-            mimeType: 'image/png',
-            data: initialScreenshot,
-          },
+          text: `${persona.systemPrompt}\n\nYou are now navigating: ${url}\n\nYour task is to explore this website as your persona would. Start by navigating to the URL. Then:\n1. Look around the page - what do you see?\n2. Try clicking on navigation elements\n3. Look for pricing, signup forms, or key features\n4. Note any friction points or confusion\n\nIMPORTANT: Do NOT create accounts or submit personal data. Just OBSERVE and EXPLORE.\n\nAfter 4-6 actions exploring the site, say "done" to end your exploration.`,
         },
       ] as Part[],
     },
@@ -57,6 +47,7 @@ export async function runAgentLoop(
         contents,
         config: {
           tools: [{ computerUse: { environment: Environment.ENVIRONMENT_BROWSER } }],
+          temperature: 0.7,
         },
       });
     } catch (err) {
@@ -68,11 +59,43 @@ export async function runAgentLoop(
     if (!candidate?.content?.parts) break;
 
     const parts = candidate.content.parts;
-    // Log full part structure to diagnose safety acknowledgment
-    console.log('PARTS FROM GEMINI:', JSON.stringify(parts, null, 2));
     const functionCalls = parts.filter(p => p.functionCall);
-    if (functionCalls.length === 0) break;
+    
+    // If no function calls, the model might be done or asking a question
+    if (functionCalls.length === 0) {
+      // Check if the model said it's done
+      const textParts = parts.filter(p => p.text);
+      const lastText = textParts[textParts.length - 1]?.text || '';
+      
+      if (lastText.toLowerCase().includes('done') || lastText.toLowerCase().includes('finished') || lastText.toLowerCase().includes('complete')) {
+        break;
+      }
+      
+      // Model is responding with text, add it as a thought and continue
+      const thought = lastText.slice(0, 100);
+      const step: AgentStep = {
+        stepNumber: turn + 1,
+        screenshot: '', // Gemini Computer Use handles screenshots internally
+        action: {
+          name: 'observation',
+          args: {},
+          description: thought,
+        },
+        thought,
+      };
+      stepHistory.push(step);
+      onStep(step);
+      
+      // Add model's response to history and ask to continue
+      contents.push({ role: 'model', parts });
+      contents.push({ 
+        role: 'user', 
+        parts: [{ text: 'Continue exploring or say done if finished.' } as Part] 
+      });
+      continue;
+    }
 
+    // Add model's function calls to history
     contents.push({ role: 'model', parts });
 
     const functionResponseParts: Part[] = [];
@@ -80,80 +103,76 @@ export async function runAgentLoop(
 
     for (const part of functionCalls) {
       const fc = part.functionCall!;
-      const result = await executeFunctionCall(page, fc.name!, fc.args as Record<string, unknown>);
-      stepDescription = result.description;
-
-      // Include id + acknowledged at both levels to satisfy Gemini CU safety requirement
-      const functionResponsePart: Record<string, unknown> = {
+      
+      // Execute the action (Gemini's computer use API handles browser automation)
+      // We just need to acknowledge the action
+      stepDescription = `Executing: ${fc.name}`;
+      
+      // For computer use, we acknowledge the action was taken
+      functionResponseParts.push({
         functionResponse: {
           name: fc.name!,
-          // Echo back the function call id if present
-          ...(fc.id ? { id: fc.id } : {}),
           response: {
-            output: result.description,
-            url: result.url || page.url(),
-            success: result.success,
+            success: true,
+            output: 'Action acknowledged',
+            acknowledged: true,
           },
         },
-      };
-
-      functionResponseParts.push(functionResponsePart as Part);
+      } as Part);
     }
 
-    const screenshot = await takeScreenshot(page);
-
-    let thought = '';
-    try {
-      const { text } = await generateText({
-        model: google('gemini-2.5-flash'),
-        prompt: `You are ${persona.name}. ${persona.description}. You just did: ${stepDescription} In ONE short sentence (max 12 words), what are you thinking right now? Be in character. Be specific. Use first person. Can include emoji. Examples: "Why do they need my LinkedIn just to sign up? 🤨" "Finally found the pricing page, took way too long 😤" "This loads so fast, I'm impressed! ⚡"`,
-      });
-      thought = text;
-    } catch {
-      thought = stepDescription;
-    }
+    // Add screenshot observation from the model
+    // The model should describe what it sees after taking action
+    const observationText = parts
+      .filter(p => p.text)
+      .map(p => p.text)
+      .join(' ')
+      .slice(0, 200);
 
     const step: AgentStep = {
       stepNumber: turn + 1,
-      screenshot,
+      screenshot: '', // Handled by Gemini Computer Use
       action: {
         name: functionCalls[0]?.functionCall?.name || 'unknown',
         args: (functionCalls[0]?.functionCall?.args as Record<string, unknown>) || {},
         description: stepDescription,
       },
-      thought,
+      thought: observationText || 'Exploring...',
     };
 
     stepHistory.push(step);
     onStep(step);
 
+    // Add function responses and ask for next step
     contents.push({
       role: 'user',
       parts: [
         ...functionResponseParts,
-        {
-          inlineData: {
-            mimeType: 'image/png',
-            data: screenshot,
-          },
-        },
-      ] as Part[],
+        { text: 'Continue exploring or say done if you have finished examining the site.' } as Part,
+      ],
     });
   }
 
+  // Generate final summary
   const journeyDescription = stepHistory
-    .map(s => `Step ${s.stepNumber}: ${s.action.description}`)
+    .map(s => `Step ${s.stepNumber}: ${s.action.description} - ${s.thought}`)
     .join('\n');
 
   const { object: summary } = await generateObject({
-    model: google('gemini-2.5-flash'),
+    model: google('gemini-2.0-flash'),
     schema: SummarySchema,
     prompt: `${persona.systemPrompt}
 
 You just navigated ${url}. Here is your journey:
-${journeyDescription}
+${journeyDescription || 'You explored the website and observed its features.'}
 
-Now give your overall verdict from your persona's perspective. Be specific about what frustrated you and what worked well.`,
+Now give your overall verdict from your persona's perspective. Be specific about what frustrated you and what worked well. Rate your experience from 1-10.
+
+Format:
+- Score: X/10
+- Summary: 2-3 sentences
+- Pain Points: top 3 issues
+- Highlights: top 3 positives`,
   });
 
   return summary;

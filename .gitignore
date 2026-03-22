@@ -40,3 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .gstack/
+
+# sensitive docs
+docs/tets.txt
+docs/demo-script.txt

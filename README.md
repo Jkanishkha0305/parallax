@@ -1,237 +1,142 @@
 # ⚡ Parallax
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
-  <img src="https://img.shields.io/badge/Google%20Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini" />
-  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/AI%20SDK-000000?style=for-the-badge&logo=AI&logoColor=white" alt="AI SDK" />
-</p>
+> **Paste a complaint. Get an audit. Issue filed.**
 
-<p align="center">
-  <strong>AI Persona Agents That Navigate Your Product & Report Real Friction</strong>
-</p>
-
-<p align="center">
-  🎯 <a href="https://parallax-ux.vercel.app">Live Demo</a> • 📖 <a href="#-the-problem">Problem</a> • 🏗️ <a href="#️-architecture">Architecture</a> • 🚀 <a href="#-getting-started">Get Started</a>
-</p>
-
-<p align="center">
-  <img src="assets/parallax.png" alt="Parallax Cover" width="100%" />
-</p>
-
----
-
-## 🎯 The Problem
-
-Every product team needs user feedback. But traditional UX research is:
-
-| Traditional Approach | Cost | Time | Scale |
-|---------------------|------|------|-------|
-| User interviews | $5K-50K | 2-4 weeks | 5-10 users |
-| Surveys | $1K-10K | 1-2 weeks | 100+ users |
-| Analytics tools | $500+/mo | Ongoing | Thousands |
-
-**What if 5 AI personas could navigate your site RIGHT NOW and tell you what's broken?**
-
----
-
-## ✨ What is Parallax?
-
-Parallax is an **autonomous UX testing agent** that:
-
-1. 🤖 **Launches 5 AI personas** simultaneously to navigate any website
-2. 👁️ **Uses Gemini Computer Vision** to see and understand the UI
-3. 🎭 **Thinks like real users** — from impatient power users to accessibility-conscious visitors
-4. 📊 **Scores UX quality** and provides specific, actionable feedback
-5. 💡 **Suggests fixes** using AI-powered recommendations
-
-### Why It's Different
-
-| Feature | Parallax | Traditional Tools | Hotjar/FullStory |
-|---------|----------|-------------------|------------------|
-| **Autonomous Navigation** | ✅ Yes | ❌ No | ❌ No |
-| **Multi-Persona Testing** | ✅ 5 at once | ❌ Manual | ❌ Manual |
-| **AI-Powered Analysis** | ✅ Gemini Vision | ❌ No | ❌ No |
-| **Instant Results** | ✅ <60 seconds | ❌ Days | ❌ Hours |
-| **Cost** | $0* | $5K+ | $500+/mo |
-
-*GPU costs apply for Gemini API
-
----
-
-## 🏗️ Architecture
-
-<p align="center">
-  <img src="assets/architecture.png" alt="Parallax Architecture" width="100%" />
-</p>
-
-### Data Flow
-
-```
-┌─────────┐    ┌──────────┐    ┌────────────┐    ┌──────────┐    ┌─────────┐
-│  User   │───▶│  Enter   │───▶│  Launch    │───▶│  Agents  │───▶│  Live   │
-│         │    │   URL    │    │  5 Browser │    │  Navigate│    │  Score  │
-└─────────┘    └──────────┘    │  Sessions  │    └──────────┘    └─────────┘
-                               └────────────┘
-```
-
----
-
-## 🎭 The 5 AI Personas
-
-| Persona | Description | What They Find |
-|---------|-------------|----------------|
-| 🏃 **Speedrun Steve** | Power user who wants minimum clicks | Unnecessary friction, slow paths |
-| 😕 **Confused Clara** | First-time user who finds tech confusing | Unclear labels, missing help |
-| 🔒 **Skeptical Sam** | Privacy-conscious questioner | Data collection concerns, dark patterns |
-| ♿ **Accessible Alex** | Keyboard-only & screen reader user | A11y issues, tab order problems |
-| 🌍 **Global Gita** | Non-English speaker from India | Internationalization gaps |
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- Google Gemini API Key
-
-### Installation
+AI agent that turns messy user complaints into structured UX audits and auto-filed GitHub issues — no humans needed.
 
 ```bash
-# Clone the repository
+# 60 seconds from chaos to clarity
+Input:  "honestly i have no idea what this product does?? the landing page is so confusing"
+Output: GitHub Issue #42 — UX Audit: Score 4.4/10, 5 persona findings, actionable fixes
+```
+
+<p align="center">
+  <a href="https://parallax-ten-rho.vercel.app">🚀 Live Demo</a> · <a href="https://github.com/Jkanishkha0305/clinicalchatlanding/issues">📋 Sample Issues</a>
+</p>
+
+---
+
+## What It Does
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  INPUT (Slack message, support ticket, or pasted complaint) │
+│  "the landing page is confusing, users can't figure out     │
+│   what ClinicalChat does"                                   │
+│                                                             │
+│                        ↓                                    │
+│                                                             │
+│  PARALLAX                                                   │
+│  ┌─────────┐   ┌──────────┐   ┌────────────┐   ┌─────────┐│
+│  │ Parse   │ → │ Launch   │ → │ Browse +   │ → │ Auto-   ││
+│  │ URL +   │   │ 5 AI     │   │ Screenshot │   │ File    ││
+│  │ Intent  │   │ Personas │   │ + Analyze  │   │ Issue   ││
+│  └─────────┘   └──────────┘   └────────────┘   └─────────┘│
+│                                                             │
+│                        ↓                                    │
+│                                                             │
+│  OUTPUT                                                     │
+│  GitHub Issue: "UX Audit: Score 4.4/10"                     │
+│  - 5 persona perspectives with real screenshots             │
+│  - Pain points + highlights per persona                     │
+│  - Actionable suggestions prioritized by severity           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## How It Works
+
+| Step | What Happens |
+|------|-------------|
+| 1. Complaint arrives | Via Slack @mention, pasted text, or support ticket |
+| 2. Parse intent | AI extracts the URL and what the user is complaining about |
+| 3. 5 personas browse | Each AI persona autonomously navigates the site with a real browser |
+| 4. Score & analyze | Each persona scores the site, identifies pain points and highlights |
+| 5. Auto-file issue | Structured GitHub issue filed with all findings |
+| 6. Report back | Results posted to Slack (if triggered from Slack) |
+
+---
+
+## Why It Matters
+
+| Old Way | Parallax |
+|---------|----------|
+| Read complaint | Automatic |
+| Manually test the site | 5 AI personas browse autonomously |
+| Write up findings | Structured scores + pain points generated |
+| File GitHub issue | Auto-filed |
+| **Hours of work** | **60 seconds, zero humans** |
+
+---
+
+## The 5 Personas
+
+| Persona | Who They Are | What They Find |
+|---------|-------------|----------------|
+| 🏃 **Speedrun Steve** | Impatient power user | Extra clicks, slow flows, wasted steps |
+| 😕 **Confused Clara** | Non-technical first-timer | Jargon, unclear labels, confusing UX |
+| 🔒 **Skeptical Sam** | Privacy advocate | Missing privacy policy, dark patterns |
+| ♿ **Accessible Alex** | Keyboard-only user | A11y issues, focus indicators, tab order |
+| 🌍 **Global Gita** | Non-English speaker | i18n gaps, cultural assumptions, jargon |
+
+---
+
+## Slack Integration
+
+```
+User:      @Parallax the landing page on https://example.com is confusing
+Parallax:  🔍 Analyzing... I'll post findings here when done.
+Parallax:  🔍 Parallax Analysis: https://example.com
+           🏃 Speedrun Steve — Score: 4/10
+           😕 Confused Clara — Score: 3/10
+           🔒 Skeptical Sam — Score: 3/10
+           📊 Overall Score: 3.3/10
+Parallax:  📋 GitHub issue filed: https://github.com/your-org/your-repo/issues/2
+```
+
+Complaint in Slack → Analysis → GitHub issue → Results posted back. Zero clicks.
+
+---
+
+## Tech Stack
+
+- **AI**: Anthropic Claude (Sonnet) — custom browser tools for navigation
+- **Browser**: Playwright + headless Chromium — real screenshots, real clicks
+- **Frontend**: Next.js 16 + React 19
+- **Streaming**: Server-Sent Events (SSE) for real-time persona updates
+- **Integrations**: Slack Events API, GitHub API
+- **Validation**: Vercel AI SDK + Zod schemas
+- **Deploy**: Vercel
+
+---
+
+## Quick Start
+
+```bash
 git clone https://github.com/Jkanishkha0305/parallax.git
 cd parallax
-
-# Install dependencies
 npm install
-
-# Set up environment variables
-cp .env.example .env.local
-# Edit .env.local and add your GOOGLE_GENERATIVE_AI_API_KEY
 ```
 
-### Development
+Create `.env`:
+```
+ANTHROPIC_API_KEY=your_key_here
+SLACK_BOT_TOKEN=your_slack_token        # optional
+GITHUB_TOKEN=your_github_pat            # optional
+GITHUB_REPO=https://github.com/org/repo # optional
+```
 
 ```bash
-# Run the development server
 npm run dev
-
-# Open http://localhost:3000
 ```
 
-### Deployment
-
-```bash
-# Deploy to Vercel (recommended)
-npx vercel deploy
-
-# Or build for production
-npm run build
-npm start
-```
+Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 📁 Project Structure
+## Built at EmpireHacks 2026
 
-```
-parallax/
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── analyze/          # Core agent API (SSE)
-│   │   │   ├── suggestions/      # AI suggestions API
-│   │   │   └── generate-personas/ # Custom persona generator
-│   │   ├── page.tsx              # Landing page
-│   │   └── results/              # Results dashboard
-│   ├── components/
-│   │   ├── url-input.tsx         # URL input component
-│   │   ├── persona-picker.tsx    # Persona selection grid
-│   │   ├── journey-card.tsx      # Streaming journey display
-│   │   └── parallax-score.tsx    # Score visualization
-│   └── lib/
-│       ├── agent-loop.ts          # Core agent logic
-│       ├── browser.ts            # Playwright browser control
-│       ├── personas.ts           # Persona definitions
-│       └── types.ts              # TypeScript types
-├── public/
-├── package.json
-├── tailwind.config.ts
-├── next.config.ts
-└── README.md
-```
+Track 1: **The Operator** — Messy input in, finished work out.
 
----
-
-## 🔧 Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | Next.js 16, React 19, Tailwind CSS 4 |
-| **AI Engine** | Google Gemini 2.5 (Computer Use + Flash) |
-| **AI SDK** | Vercel AI SDK (generateObject, generateText) |
-| **Browser** | Playwright (headless Chromium) |
-| **Deployment** | Vercel (Serverless Functions) |
-| **Validation** | Zod |
-
----
-
-## 📊 Judging Criteria Alignment
-
-| Criteria | How We Meet It |
-|----------|----------------|
-| **Live Demo (45%)** | Judges can paste ANY URL and watch 5 agents navigate live in 60 seconds |
-| **Creativity (35%)** | First-of-its-kind autonomous UX testing with multi-persona simulation |
-| **Impact (20%)** | Every product team needs this — real B2B value, scales to thousands of sites |
-
----
-
-## 🎬 Demo Script
-
-```
-[0:00-0:20] HOOK
-"Every product team needs user feedback. But real user testing
-takes weeks and costs thousands. What if 5 AI personas could
-navigate your site RIGHT NOW and tell you what's broken?"
-
-[0:20-1:30] LIVE DEMO
-- Paste a URL (the judge's site or well-known site)
-- 5 persona cards appear, start navigating simultaneously
-- Show screenshots streaming in with observations
-- "Steve says signup takes 7 clicks — he wants a shortcut"
-- "Clara can't find the pricing page"
-- "Sam doesn't trust the cookie banner"
-
-[1:30-2:20] SHOW RESULTS
-- Overall Parallax Score: 6.2/10
-- Click into one persona's full journey
-- Show screenshot at each step with thought bubbles
-- Show pain points summary
-- Click "AI Suggestions" for actionable fixes
-
-[2:20-3:00] CLOSE
-- "Built with Vercel AI SDK + Gemini 2.5 Computer Use"
-- "Each persona actually navigates your site — this isn't
-  static analysis, these are real agent journeys"
-- "Point it at any URL. Know your blind spots in 60 seconds."
-```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
----
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-<p align="center">
-  <strong>Built at Cerebral Valley x Vercel x DeepMind Hackathon NYC 🎯</strong>
-</p>
+**Mess in. Issues filed. Loop closed.**

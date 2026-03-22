@@ -20,15 +20,6 @@ export async function launchBrowser(): Promise<Browser> {
         '--disable-features=CDPScreenshotNewSurface',
         '--disable-gpu',
         '--disable-dev-shm-usage',
-        '--single-process',
-        '--disable-extensions',
-        '--disable-background-networking',
-        '--disable-sync',
-        '--disable-translate',
-        '--disable-default-apps',
-        '--no-first-run',
-        '--no-zygote',
-        '--js-flags=--max-old-space-size=256',
       ]);
 
     return chromium.launch({ args: safeArgs, executablePath, headless: true });

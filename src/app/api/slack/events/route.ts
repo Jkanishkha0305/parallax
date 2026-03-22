@@ -61,14 +61,13 @@ async function handleMention(text: string, channel: string) {
 
   await postSlackMessage(channel, `🌐 Navigating to ${url}...\n${parsed.intent !== 'General UX audit' ? `🎯 Intent: "${parsed.intent}"` : ''}`);
 
-  // Run personas
+  // Run personas — launch fresh browser per persona to avoid memory crashes on serverless
   const results: { persona: typeof SLACK_PERSONAS[0]; summary?: { overallScore: number; summary: string; painPoints: string[]; highlights: string[] }; error?: string }[] = [];
-  let browser;
 
-  try {
-    browser = await launchBrowser();
-
-    for (const persona of SLACK_PERSONAS) {
+  for (const persona of SLACK_PERSONAS) {
+    let browser;
+    try {
+      browser = await launchBrowser();
       const context = await createContext(browser);
       const page = await context.newPage();
       try {
@@ -79,12 +78,11 @@ async function handleMention(text: string, channel: string) {
       } finally {
         await context.close();
       }
+    } catch (err) {
+      results.push({ persona, error: err instanceof Error ? err.message : 'Unknown error' });
+    } finally {
+      if (browser) await browser.close();
     }
-  } catch (err) {
-    await postSlackMessage(channel, `❌ Browser launch failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    return;
-  } finally {
-    if (browser) await browser.close();
   }
 
   // Format results

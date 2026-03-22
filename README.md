@@ -1,7 +1,7 @@
 # ⚡ Parallax
 
 <p align="center">
-  <img src="assets/parallax.png" alt="Parallax Cover" width="800"/>
+  <img src="assets/gen_cover.png" alt="Parallax Cover" width="800"/>
 </p>
 
 > **Paste a complaint. Get an audit. Issue filed.**
@@ -20,7 +20,31 @@ Output: GitHub Issue #42 — UX Audit: Score 4.4/10, 5 persona findings, actiona
 
 ---
 
+## How to Use
+
+### Web UI ([parallax-ten-rho.vercel.app](https://parallax-ten-rho.vercel.app))
+
+1. **Paste a complaint** — type or paste a real user complaint like: *"honestly i spent 5 minutes on your site and i still have no idea what this product does"*
+2. **Add your URL** — the app auto-extracts it from the complaint, or enter it manually
+3. **Optional: Add GitHub token + repo** — to auto-file issues to your repo
+4. **Hit Start Analysis** — 5 AI personas launch and browse your site autonomously
+5. **Watch live** — real-time screenshots show each persona clicking, scrolling, and reading
+6. **Get results** — scores, pain points, and highlights from each persona
+7. **GitHub issue auto-filed** — structured, actionable, ready for your dev team
+
+### Slack Bot
+
+1. Invite `@Parallax` to any channel
+2. Type: `@Parallax the checkout flow on https://yoursite.com is broken`
+3. Parallax analyzes, posts results, and files a GitHub issue — all in the channel
+
+---
+
 ## What It Does
+
+<p align="center">
+  <img src="assets/gen_workflow.png" alt="Parallax Workflow" width="800"/>
+</p>
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -46,19 +70,6 @@ Output: GitHub Issue #42 — UX Audit: Score 4.4/10, 5 persona findings, actiona
 │  - Actionable suggestions prioritized by severity           │
 └─────────────────────────────────────────────────────────────┘
 ```
-
----
-
-## How It Works
-
-| Step | What Happens |
-|------|-------------|
-| 1. Complaint arrives | Via Slack @mention, pasted text, or support ticket |
-| 2. Parse intent | AI extracts the URL and what the user is complaining about |
-| 3. 5 personas browse | Each AI persona autonomously navigates the site with a real browser |
-| 4. Score & analyze | Each persona scores the site, identifies pain points and highlights |
-| 5. Auto-file issue | Structured GitHub issue filed with all findings |
-| 6. Report back | Results posted to Slack (if triggered from Slack) |
 
 ---
 
@@ -115,6 +126,14 @@ Complaint in Slack → Analysis → GitHub issue → Results posted back. Zero c
 
 ---
 
+## Architecture
+
+<p align="center">
+  <img src="assets/gen_arch.png" alt="Parallax Architecture" width="800"/>
+</p>
+
+---
+
 ## Quick Start
 
 ```bash
@@ -136,14 +155,6 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
-
----
-
-## Architecture
-
-<p align="center">
-  <img src="assets/architecture.png" alt="Parallax Architecture" width="800"/>
-</p>
 
 ---
 

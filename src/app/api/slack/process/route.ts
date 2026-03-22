@@ -2,13 +2,18 @@ import { NextRequest } from 'next/server';
 import { generateObject } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
-import { launchBrowser, createContext } from '@/lib/browser';
-import { runAgentLoop } from '@/lib/agent-loop';
 import { PERSONAS } from '@/lib/personas';
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
-const SLACK_PERSONAS = PERSONAS.slice(0, 2);
+const SLACK_PERSONAS = PERSONAS.slice(0, 3);
+
+const AnalysisSchema = z.object({
+  overallScore: z.number(),
+  summary: z.string(),
+  painPoints: z.array(z.string()),
+  highlights: z.array(z.string()),
+});
 
 async function postSlackMessage(channel: string, text: string) {
   const res = await fetch('https://slack.com/api/chat.postMessage', {
@@ -25,7 +30,6 @@ async function postSlackMessage(channel: string, text: string) {
 }
 
 export async function POST(req: NextRequest) {
-  // Verify internal secret to prevent external calls
   const authHeader = req.headers.get('x-internal-secret');
   if (authHeader !== process.env.ANTHROPIC_API_KEY) {
     return new Response('Unauthorized', { status: 401 });
@@ -54,38 +58,56 @@ export async function POST(req: NextRequest) {
   }
 
   if (!parsed.url) {
-    await postSlackMessage(channel, '❌ No URL found in that message. Try: @Parallax check https://example.com');
+    await postSlackMessage(channel, '❌ No URL found. Try: @Parallax check https://example.com');
     return new Response('OK', { status: 200 });
   }
 
   const url = parsed.url.startsWith('http') ? parsed.url : `https://${parsed.url}`;
 
-  await postSlackMessage(channel, `🌐 Navigating to ${url}...\n${parsed.intent !== 'General UX audit' ? `🎯 Intent: "${parsed.intent}"` : ''}`);
+  await postSlackMessage(channel, `🌐 Analyzing ${url}...\n${parsed.intent !== 'General UX audit' ? `🎯 Intent: "${parsed.intent}"` : ''}`);
 
-  // Run personas
-  const results: { persona: typeof SLACK_PERSONAS[0]; summary?: { overallScore: number; summary: string; painPoints: string[]; highlights: string[] }; error?: string }[] = [];
-  let browser;
-
+  // Fetch the page HTML instead of using browser
+  let pageContent = '';
   try {
-    browser = await launchBrowser();
-
-    for (const persona of SLACK_PERSONAS) {
-      const context = await createContext(browser);
-      const page = await context.newPage();
-      try {
-        const summary = await runAgentLoop(page, persona, url, () => {}, parsed.intent);
-        results.push({ persona, summary });
-      } catch (err) {
-        results.push({ persona, error: err instanceof Error ? err.message : 'Unknown error' });
-      } finally {
-        await context.close();
-      }
-    }
-  } catch (err) {
-    await postSlackMessage(channel, `❌ Browser launch failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    const pageRes = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+    });
+    const html = await pageRes.text();
+    // Strip scripts/styles, keep text content
+    pageContent = html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 5000);
+  } catch {
+    await postSlackMessage(channel, '❌ Could not fetch the website.');
     return new Response('OK', { status: 200 });
-  } finally {
-    if (browser) await browser.close();
+  }
+
+  // Run personas against the HTML content
+  const results: { persona: typeof SLACK_PERSONAS[0]; summary?: z.infer<typeof AnalysisSchema>; error?: string }[] = [];
+
+  for (const persona of SLACK_PERSONAS) {
+    try {
+      const { object } = await generateObject({
+        model: anthropic('claude-sonnet-4-20250514'),
+        schema: AnalysisSchema,
+        prompt: `${persona.systemPrompt}
+
+You are visiting this website: ${url}
+The user's complaint: "${parsed.intent}"
+
+Here is the page content:
+${pageContent}
+
+Analyze this website from your persona's perspective. Score it 1-10, provide a summary, list 3 specific pain points, and list 2 highlights. Be specific and reference actual content from the page.`,
+      });
+      results.push({ persona, summary: object });
+    } catch (err) {
+      results.push({ persona, error: err instanceof Error ? err.message : 'Unknown error' });
+    }
   }
 
   // Format results

@@ -7,7 +7,7 @@ import { Persona } from '@/lib/types';
 export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
-  const { url: rawUrl, personaId, personaData } = await req.json();
+  const { url: rawUrl, personaId, personaData, intent } = await req.json();
 
   const url = rawUrl?.startsWith('http') ? rawUrl : `https://${rawUrl}`;
 
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         const summary = await runAgentLoop(page, persona, url, (step) => {
           const data = JSON.stringify({ type: 'step', personaId: persona.id, step });
           controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-        });
+        }, intent);
 
         const summaryData = JSON.stringify({
           type: 'summary',

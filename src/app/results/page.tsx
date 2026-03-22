@@ -52,9 +52,12 @@ interface RepoAnalysis {
 function ResultsContent() {
   const searchParams = useSearchParams();
   const url = searchParams.get('url') || '';
+  const intent = searchParams.get('intent') || '';
   const personaIdsString = searchParams.get('personas') || '';
   const personaIds = personaIdsString ? personaIdsString.split(',') : [];
   const isCustom = searchParams.get('custom') === 'true';
+  const ghTokenParam = searchParams.get('ghToken') || '';
+  const ghRepoParam = searchParams.get('ghRepo') || '';
 
   const [activeTab, setActiveTab] = useState<Tab>('personas');
   const [personaStates, setPersonaStates] = useState<Record<string, PersonaState>>({});
@@ -64,9 +67,14 @@ function ResultsContent() {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   
   // GitHub integration
-  const [githubUrl, setGithubUrl] = useState('');
+  const [githubToken, setGithubToken] = useState(ghTokenParam);
+  const [githubUrl, setGithubUrl] = useState(ghRepoParam);
   const [repoAnalysis, setRepoAnalysis] = useState<RepoAnalysis | null>(null);
   const [isAnalyzingRepo, setIsAnalyzingRepo] = useState(false);
+  const [isFilingIssue, setIsFilingIssue] = useState(false);
+  const [filedIssueUrl, setFiledIssueUrl] = useState('');
+  const [githubError, setGithubError] = useState<string | null>(null);
+  const [githubSuccess, setGithubSuccess] = useState<{ issueUrl: string; issueNumber: number } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -110,16 +118,16 @@ function ResultsContent() {
     if (!url || !personaIdsString || personas.length === 0) return;
     personaIds.forEach((personaId) => {
       const persona = personas.find(p => p.id === personaId);
-      if (persona) runPersonaStream(personaId, url, persona);
+      if (persona) runPersonaStream(personaId, url, persona, intent);
     });
-  }, [url, personaIdsString, personas]);
+  }, [url, personaIdsString, personas, intent]);
 
-  const runPersonaStream = async (personaId: string, targetUrl: string, persona: Persona) => {
+  const runPersonaStream = async (personaId: string, targetUrl: string, persona: Persona, intentParam: string = '') => {
     try {
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: targetUrl, personaId, personaData: persona }),
+        body: JSON.stringify({ url: targetUrl, personaId, personaData: persona, intent: intentParam }),
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -238,6 +246,8 @@ function ResultsContent() {
     }
     
     setIsAnalyzingRepo(true);
+    setGithubError(null);
+    setGithubSuccess(null);
     try {
       const response = await fetch('/api/analyze-repo', {
         method: 'POST',
@@ -255,12 +265,57 @@ function ResultsContent() {
     }
   };
 
+  const fileGitHubIssues = async () => {
+    if (!githubToken || !githubUrl) return;
+
+    setIsFilingIssue(true);
+    setGithubError(null);
+
+    try {
+      const findings = selectedPersonas
+        .map(p => {
+          const j = personaStates[p.id]?.journey;
+          if (!j) return '';
+          return `### ${p.emoji} ${p.name} (Score: ${j.overallScore}/10)\n${j.painPoints.map(pp => '- ' + pp).join('\n')}`;
+        }).filter(Boolean).join('\n\n');
+
+      const body = `## Context\n${intent ? `User reported: "${decodeURIComponent(intent)}"` : 'General UX audit'}\nAnalyzed: ${url}\n\n## Findings\n${findings}\n\n---\n*Filed by [Parallax](https://parallax-ux.vercel.app)*`;
+
+      const response = await fetch('/api/create-issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoUrl: githubUrl,
+          title: 'UX Issues: ' + url,
+          body,
+          token: githubToken,
+        }),
+      });
+      if (!response.ok) throw new Error((await response.json()).error);
+      const data = await response.json();
+      setFiledIssueUrl(data.issueUrl);
+    } catch (error) {
+      alert('Failed to file issue: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsFilingIssue(false);
+    }
+  };
+
   const selectedPersonas = personas.filter(p => personaIds.includes(p.id));
   const scores = Object.values(personaStates)
     .map(s => s.journey?.overallScore || 0)
     .filter(s => s > 0);
   const loadingCount = Object.values(personaStates).filter(s => s.isLoading).length;
   const isComplete = loadingCount === 0 && scores.length > 0;
+
+  // Auto-file GitHub issue when analysis completes and token+repo were provided
+  const [autoFiled, setAutoFiled] = useState(false);
+  useEffect(() => {
+    if (isComplete && githubToken && githubUrl && !filedIssueUrl && !autoFiled && !isFilingIssue) {
+      setAutoFiled(true);
+      fileGitHubIssues();
+    }
+  }, [isComplete, githubToken, githubUrl, filedIssueUrl, autoFiled, isFilingIssue]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -351,6 +406,48 @@ function ResultsContent() {
         <div className="mb-8">
           <ParallaxScore scores={scores} />
         </div>
+
+        {intent && (
+          <div className="mb-6 p-4 bg-purple-500/10 rounded-xl border border-purple-500/20">
+            <span className="text-purple-400 font-medium">Testing because: </span>
+            <span className="text-white">{decodeURIComponent(intent)}</span>
+          </div>
+        )}
+
+        {/* Auto-filing status */}
+        {githubToken && githubUrl && !filedIssueUrl && (
+          <div className="mb-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20 flex items-center gap-3">
+            {isComplete ? (
+              isFilingIssue ? (
+                <>
+                  <svg className="w-5 h-5 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span className="text-blue-400">Auto-filing GitHub issue...</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-blue-400">Preparing to file GitHub issue...</span>
+                </>
+              )
+            ) : (
+              <>
+                <span className="text-blue-400">Will auto-file GitHub issue when analysis completes</span>
+              </>
+            )}
+          </div>
+        )}
+
+        {filedIssueUrl && (
+          <div className="mb-6 p-4 bg-green-500/10 rounded-xl border border-green-500/20 flex items-center gap-3">
+            <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-green-400">Issue auto-filed! </span>
+            <a href={filedIssueUrl} target="_blank" className="text-white underline hover:text-purple-300">{filedIssueUrl}</a>
+          </div>
+        )}
 
         {/* Loading Status */}
         {loadingCount > 0 && (
@@ -484,89 +581,82 @@ function ResultsContent() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white">GitHub Integration</h3>
-                  <p className="text-sm text-[#666]">AI suggests which files to review based on pain points</p>
+                  <h3 className="text-lg font-semibold text-white">File GitHub Issues</h3>
+                  <p className="text-sm text-[#666]">Create issues from persona findings</p>
                 </div>
               </div>
 
-              {/* Input */}
-              <div className="flex gap-3 mb-6">
-                <input
-                  type="text"
-                  value={githubUrl}
-                  onChange={(e) => setGithubUrl(e.target.value)}
-                  placeholder="https://github.com/owner/repo"
-                  className="flex-1 px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-[#444] focus:outline-none focus:border-purple-500/50"
-                />
-                <button
-                  onClick={analyzeRepo}
-                  disabled={isAnalyzingRepo || !githubUrl.trim()}
-                  className="px-6 py-3 bg-white text-black font-medium rounded-xl hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isAnalyzingRepo ? 'Analyzing...' : 'Analyze'}
-                </button>
-              </div>
-
-              {/* Results */}
-              {repoAnalysis && (
-                <div className="space-y-4">
-                  {/* Repo Info */}
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                    <div className="flex items-center gap-3 mb-2">
-                      <svg className="w-5 h-5 text-[#666]" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                      </svg>
-                      <a href={repoAnalysis.repo.url} target="_blank" rel="noopener noreferrer" className="text-white font-medium hover:text-purple-400">
-                        {repoAnalysis.repo.name}
-                      </a>
-                      <span className="text-sm text-[#666]">⭐ {repoAnalysis.repo.stars}</span>
-                    </div>
-                    <p className="text-sm text-[#888]">{repoAnalysis.repo.description}</p>
-                  </div>
-
-                  {/* Summary */}
-                  <div className="p-4 bg-purple-500/10 rounded-xl border border-purple-500/20">
-                    <p className="text-purple-200 text-sm">{repoAnalysis.suggestions.summary}</p>
-                  </div>
-
-                  {/* Files */}
-                  {repoAnalysis.suggestions.relevantFiles.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-[#999] mb-3">Files to Review</h4>
-                      <div className="space-y-2">
-                        {repoAnalysis.suggestions.relevantFiles.map((file, idx) => {
-                          const colors = getPriorityColor(file.priority);
-                          return (
-                            <div key={idx} className={`p-3 rounded-lg ${colors.bg} border ${colors.border}`}>
-                              <code className="text-sm text-white">{file.path}</code>
-                              <p className="text-xs text-[#888] mt-1">{file.reason}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Fixes */}
-                  {repoAnalysis.suggestions.potentialFixes.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-[#999] mb-3">Suggested Changes</h4>
-                      <div className="space-y-3">
-                        {repoAnalysis.suggestions.potentialFixes.map((fix, idx) => (
-                          <div key={idx} className="p-4 rounded-lg bg-white/5 border border-white/10">
-                            <code className="text-xs text-purple-400 bg-purple-500/10 px-2 py-1 rounded">{fix.file}</code>
-                            <p className="text-sm text-[#aaa] mt-2">
-                              <span className="text-amber-400">Issue: </span>{fix.issue}
-                            </p>
-                            <p className="text-sm text-[#888] mt-1">
-                              <span className="text-green-400">Fix: </span>{fix.suggestion}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+              {filedIssueUrl ? (
+                <div className="p-4 bg-green-500/10 rounded-xl border border-green-500/20">
+                  <span className="text-green-400">Issue filed! </span>
+                  <a href={filedIssueUrl} target="_blank" className="text-white underline">{filedIssueUrl}</a>
                 </div>
+              ) : (
+                <>
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <label className="block text-sm text-[#888] mb-2">
+                        GitHub Token
+                        <a 
+                          href="https://github.com/settings/tokens/new?scopes=repo" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="ml-2 text-purple-400 hover:text-purple-300 text-xs"
+                        >
+                          Get a token
+                        </a>
+                      </label>
+                      <input
+                        type="password"
+                        value={githubToken}
+                        onChange={(e) => setGithubToken(e.target.value)}
+                        placeholder="ghp_..."
+                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-[#444] focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#888] mb-2">Repository URL</label>
+                      <input
+                        type="text"
+                        value={githubUrl}
+                        onChange={(e) => setGithubUrl(e.target.value)}
+                        placeholder="https://github.com/owner/repo"
+                        className="w-full px-4 py-3 bg-[#111] border border-[#333] rounded-xl text-white placeholder-[#444] focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+                  </div>
+
+                  {githubError && (
+                    <div className="mb-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                      <span className="text-red-400 text-sm">{githubError}</span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={fileGitHubIssues}
+                    disabled={isFilingIssue || !githubToken || !githubUrl}
+                    className="px-6 py-3 bg-green-600 text-white font-medium rounded-xl hover:bg-green-500 disabled:opacity-50 transition-colors"
+                  >
+                    {isFilingIssue ? 'Filing...' : 'File GitHub Issue'}
+                  </button>
+
+                  {repoAnalysis && (
+                    <div className="mt-6 pt-6 border-t border-white/10">
+                      <h4 className="text-sm font-medium text-[#999] mb-3">Repo Analysis</h4>
+                      <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                        <div className="flex items-center gap-3 mb-2">
+                          <svg className="w-5 h-5 text-[#666]" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                          </svg>
+                          <a href={repoAnalysis.repo.url} target="_blank" rel="noopener noreferrer" className="text-white font-medium hover:text-purple-400">
+                            {repoAnalysis.repo.name}
+                          </a>
+                        </div>
+                        <p className="text-sm text-[#888]">{repoAnalysis.suggestions.summary}</p>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
+import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 
 const PersonaSchema = z.object({
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { object } = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: anthropic('claude-sonnet-4-20250514'),
       schema: GeneratePersonasSchema,
       prompt: `Generate 5 distinct user personas who match this target audience: ${audience}. Each persona should have a unique name, personality, tech comfort level, frustrations, and goals. The systemPrompt should describe how they navigate websites and what they look for. Make them realistic and diverse within the audience.
 

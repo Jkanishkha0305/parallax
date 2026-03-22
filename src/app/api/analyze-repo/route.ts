@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
+import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 
 const RepoSuggestionSchema = z.object({
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       : 'No specific pain points provided';
 
     const { object } = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: anthropic('claude-sonnet-4-20250514'),
       schema: RepoSuggestionSchema,
       prompt: `You are a code expert analyzing a GitHub repository.
 

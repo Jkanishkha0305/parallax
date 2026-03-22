@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
+import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 
 const SuggestionSchema = z.object({
@@ -38,7 +38,7 @@ Highlights: ${j.highlights.map(h => `- ${h}`).join('\n')}
       .join('\n---\n');
 
     const { object } = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: anthropic('claude-sonnet-4-20250514'),
       schema: SuggestionSchema,
       prompt: `You are a UX expert analyzing test results for ${url}.
 

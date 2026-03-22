@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import UrlInput from '@/components/url-input';
 import PersonaPicker from '@/components/persona-picker';
 import { Persona } from '@/lib/types';
 
@@ -28,32 +27,47 @@ export default function Home() {
   const [customPersonas, setCustomPersonas] = useState<Persona[] | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [githubToken, setGithubToken] = useState('');
+  const [githubRepo, setGithubRepo] = useState('');
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleTogglePersona = (id: string) => {
-    if (customPersonas) {
-      setSelectedPersonas(prev => 
-        prev.includes(id) 
-          ? prev.filter(p => p !== id)
-          : [...prev, id]
-      );
-    } else {
-      setSelectedPersonas(prev => 
-        prev.includes(id) 
-          ? prev.filter(p => p !== id)
-          : [...prev, id]
-      );
-    }
+    setSelectedPersonas(prev =>
+      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+    );
   };
 
-  const handleLaunch = async (inputUrl: string) => {
-    if (selectedPersonas.length === 0) return;
-    
-    const finalUrl = inputUrl || url;
-    if (!finalUrl) return;
+  const handleLaunch = async () => {
+    if (selectedPersonas.length === 0 || !url) return;
+
+    let finalUrl = url;
+    let intent = '';
+
+    if (url.includes(' ')) {
+      try {
+        const response = await fetch('/api/parse-input', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: url }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          alert(data.error || 'Could not extract URL from input');
+          return;
+        }
+
+        const data = await response.json();
+        finalUrl = data.url;
+        intent = data.intent || '';
+      } catch {
+        alert('Failed to parse input');
+        return;
+      }
+    }
 
     if (audience.trim()) {
       setIsGenerating(true);
@@ -79,6 +93,9 @@ export default function Home() {
           personas: generatedPersonas.map((p: Persona) => p.id).join(','),
           custom: 'true',
         });
+        if (intent) params.set('intent', intent);
+        if (githubToken) params.set('ghToken', githubToken);
+        if (githubRepo) params.set('ghRepo', githubRepo);
         router.push(`/results?${params.toString()}`);
       } catch (error) {
         console.error('Error generating personas:', error);
@@ -89,6 +106,9 @@ export default function Home() {
         url: finalUrl,
         personas: selectedPersonas.join(','),
       });
+      if (intent) params.set('intent', intent);
+      if (githubToken) params.set('ghToken', githubToken);
+      if (githubRepo) params.set('ghRepo', githubRepo);
       router.push(`/results?${params.toString()}`);
     }
   };
@@ -140,8 +160,14 @@ export default function Home() {
 
         {/* URL Input */}
         <div className="mb-4 w-full max-w-2xl animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-          <div className="glass-card p-2">
-            <UrlInput onSubmit={(u) => setUrl(u)} />
+          <div className="glass-card p-4">
+            <textarea
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Paste a Slack message, support ticket, or bug report... or just a URL"
+              rows={4}
+              className="w-full px-4 py-3 bg-[#1a1a1a]/50 border border-[#333] rounded-xl text-white placeholder-[#444] focus:outline-none focus:border-purple-500/50 transition-colors resize-none"
+            />
           </div>
         </div>
 
@@ -186,6 +212,38 @@ export default function Home() {
           </div>
         </div>
 
+        {/* GitHub Auto-File (optional) */}
+        <div className="mb-8 w-full max-w-2xl animate-fade-in-up" style={{ animationDelay: '0.38s' }}>
+          <div className="glass-card p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <svg className="w-4 h-4 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+              <label className="text-sm font-medium text-[#9ca3af]">Auto-File GitHub Issues (optional)</label>
+              <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:text-purple-300 ml-auto">Get a token</a>
+            </div>
+            <div className="flex gap-3">
+              <input
+                type="password"
+                value={githubToken}
+                onChange={(e) => setGithubToken(e.target.value)}
+                placeholder="GitHub token (ghp_...)"
+                className="flex-1 px-4 py-2.5 bg-[#1a1a1a]/50 border border-[#333] rounded-xl text-white text-sm placeholder-[#444] focus:outline-none focus:border-purple-500/50 transition-colors"
+              />
+              <input
+                type="text"
+                value={githubRepo}
+                onChange={(e) => setGithubRepo(e.target.value)}
+                placeholder="github.com/owner/repo"
+                className="flex-1 px-4 py-2.5 bg-[#1a1a1a]/50 border border-[#333] rounded-xl text-white text-sm placeholder-[#444] focus:outline-none focus:border-purple-500/50 transition-colors"
+              />
+            </div>
+            <p className="mt-2 text-xs text-[#666]">
+              Add both to auto-file GitHub issues when analysis completes
+            </p>
+          </div>
+        </div>
+
         {/* Persona Picker */}
         <div className="mb-12 w-full max-w-4xl animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <PersonaPicker 
@@ -198,7 +256,7 @@ export default function Home() {
         {(selectedPersonas.length > 0 && url || audience.trim()) && (
           <div className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
             <button
-              onClick={() => handleLaunch(url)}
+              onClick={() => handleLaunch()}
               disabled={isGenerating || !url}
               className="group relative px-10 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 animate-pulse-glow disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >

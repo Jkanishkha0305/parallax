@@ -1,5 +1,9 @@
 # ⚡ Parallax
 
+<p align="center">
+  <img src="assets/parallax.png" alt="Parallax Cover" width="800"/>
+</p>
+
 > **Paste a complaint. Get an audit. Issue filed.**
 
 AI agent that turns messy user complaints into structured UX audits and auto-filed GitHub issues — no humans needed.
@@ -11,7 +15,7 @@ Output: GitHub Issue #42 — UX Audit: Score 4.4/10, 5 persona findings, actiona
 ```
 
 <p align="center">
-  <a href="https://parallax-ten-rho.vercel.app">🚀 Live Demo</a> · <a href="https://github.com/Jkanishkha0305/clinicalchatlanding/issues">📋 Sample Issues</a>
+  <a href="https://parallax-ten-rho.vercel.app">🚀 Live Demo</a> · <a href="https://github.com/Jkanishkha0305/clinicalchatlanding/issues">📋 Sample Issues</a> · <a href="https://vimeo.com/1175977811">🎥 Demo Video</a>
 </p>
 
 ---
@@ -132,6 +136,14 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+## Architecture
+
+<p align="center">
+  <img src="assets/architecture.png" alt="Parallax Architecture" width="800"/>
+</p>
 
 ---
 
